@@ -13,6 +13,26 @@ struct DailyBriefingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     LifeHeading(name: "Tổng quan hôm nay", detail: "Dữ liệu của tài khoản hiện tại · không gửi đến AI")
+                    NavigationLink {
+                        DailyPlanView(selectedTab: $selectedTab)
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 13) {
+                                Image(systemName: "calendar.badge.clock")
+                                    .font(.title2).foregroundStyle(LifeTheme.cyan)
+                                    .frame(width: 44, height: 44)
+                                    .background(LifeTheme.cyan.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text("AI Daily Assistant").font(.headline)
+                                    Text("Tạo lịch tập trung, tránh giờ bận và nhận gợi ý AI tùy chọn")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
                     if let briefing = api.dailyBriefing {
                         HStack(spacing: 9) {
                             LifeMetric(title: "Đến hạn", count: briefing.summary.dueToday, symbol: "calendar", tint: LifeTheme.cyan)
