@@ -1,0 +1,34 @@
+name: Build iOS unsigned IPA
+on:
+  push:
+    paths:
+      - 'ios/**'
+      - 'branding/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install xcodegen librsvg
+      - name: Render app icon
+        run: |
+          mkdir -p ios/ViePNAILife/Resources/Assets.xcassets/AppIcon.appiconset
+          rsvg-convert -w 1024 -h 1024 branding/ViePN-AI-Life-icon.svg > ios/ViePNAILife/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build for iPhone
+        run: |
+          xcodebuild -project ios/ViePNAILife.xcodeproj -scheme ViePNAILife -sdk iphoneos -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/ViePNAILife.app Payload/
+          zip -qry ViePNAILife-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ViePNAILife-V4-unsigned
+          path: ViePNAILife-unsigned.ipa
+          if-no-files-found: error
