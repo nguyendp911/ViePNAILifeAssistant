@@ -1,3 +1,20 @@
+# ViePN AI Life Assistant V4.1 – Smart Day
+
+**Trạng thái:** Mã nguồn đã cập nhật trên GitHub; iOS IPA được build qua GitHub Actions và cần ký bằng Apple ID/profile của bạn trước khi cài. Kết quả build V4.1 xem ở tab Actions.
+
+### Mới trong V4.1
+
+- **Home → Smart Day:** bảng tổng hợp công việc đến hạn hôm nay, quá hạn, sắp tới và chưa đặt hạn; ưu tiên tối đa 12 công việc, có nút hoàn thành.
+- **Action Center:** xem thống kê yêu cầu phê duyệt đang chờ (hành động riêng, workflow, automation), đi đến màn hình duyệt khi cần.
+- **Lịch tự động 48 giờ:** xem tối đa 5 lịch sắp đến hạn, không thực thi khi mở Smart Day.
+- **Quyền riêng tư:** `GET /v1/briefing?offsetMinutes=420` chỉ tổng hợp dữ liệu tài khoản đang xác thực; không gọi mô hình AI hay Google, không gửi thông báo, không thay đổi dữ liệu.
+- **Kiểm thử:** unit tests cho ranh giới ngày Việt Nam, tác vụ đã hoàn thành, duyệt thủ công, giới hạn kết quả và request không xác thực; HTTP smoke test và TypeScript CI.
+- Không có cơ chế vượt giới hạn App ID Apple. IPA có Share Extension cần profile đúng cho từng extension khi ký miễn phí 7 ngày.
+
+Xem [mô tả Smart Day V4.1](docs/V4.1-SMART-DAY.md).
+
+---
+
 # ViePN AI Life Assistant V4.0 (engineering preview)
 
 **Release status:** V4.0 source code preview; **NOT a verified signed IPA or App Store-ready release**. This version is based on V3.6 and includes optional V3.7 vector search, V3.8 manual workflow failure recovery, V3.9 revisioned foreground snapshot sync, and V4.0 test/release documentation.
