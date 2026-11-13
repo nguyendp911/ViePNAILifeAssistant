@@ -30,7 +30,7 @@ export function addAutomation(s:PersonalStore,request:{title:unknown;intervalMin
   if(request.skill!=='create_note'&&request.skill!=='create_task')throw Error('unsupported automation skill');
   if(!request.payload||typeof request.payload!=='object'||Array.isArray(request.payload))throw Error('invalid payload');
   const p=request.payload as Record<string,unknown>;
-  const payload=request.skill==='create_note'?{title:bounded(p.title,200),content:bounded(p.content,12000)}:{title:bounded(p.title,300)};
+  const payload:Record<string,string>=request.skill==='create_note'?{title:bounded(p.title,200),content:bounded(p.content,12000)}:{title:bounded(p.title,300)};
   if(request.enabled!==undefined && typeof request.enabled!=='boolean')throw Error('invalid enabled');
   const item:Automation={id:randomUUID(),title,intervalMinutes:interval as number,skill:request.skill,payload,enabled:request.enabled===true,nextRunAt:new Date(now.getTime()+(interval as number)*60000).toISOString()};
   s.automations.push(item);return item;
