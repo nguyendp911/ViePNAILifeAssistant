@@ -1,0 +1,23 @@
+name: Gateway tests
+on:
+  push:
+    paths:
+      - 'gateway/**'
+      - '.github/workflows/gateway.yml'
+  workflow_dispatch:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: cd gateway && npm install --no-audit --no-fund
+      - name: Typecheck
+        run: cd gateway && npm run check
+      - name: Test core logic
+        run: cd gateway && npm test
+      - name: Test HTTP API
+        run: cd gateway && npm run test:api
