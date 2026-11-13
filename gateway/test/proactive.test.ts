@@ -81,6 +81,10 @@ test('task proposals queue an approval-only note exactly once',()=>{
  assert.equal((s as typeof s & {notes?:unknown[]}).notes?.length,0);
  assert.equal(queueProactiveProposal(s,id,offset,now).id,proposal.id);
  assert.equal((s as typeof s & {workflows?:unknown[]}).workflows?.length,1);
+ const other=createTask(s,'Làm hồ sơ','2026-11-13T16:00:00Z');
+ const proposal2=queueProactiveProposal(s,'task-'+other.id,offset,now);
+ assert.notEqual(proposal2.id,proposal.id);
+ assert.equal((s as typeof s & {workflows?:unknown[]}).workflows?.length,2);
  assert.throws(()=>queueProactiveProposal(s,'approvals',offset,now),/no task proposal/);
  assert.throws(()=>queueProactiveProposal(s,'task-not-real',offset,now),/no task proposal/);
  task.done=true;
