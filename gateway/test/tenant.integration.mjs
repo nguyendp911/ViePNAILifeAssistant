@@ -18,6 +18,22 @@ try{
  assert.equal((await call(bob,'/v1/tasks','POST',{title:'Private Bob task'})).status,201);
  assert.equal((await call(alice,'/v1/memories','POST',{text:'Private Alice memory',consent:true})).status,201);
  assert.equal((await call(alice,'/v1/tasks')).data.items.length,0);
+ // V4.5: proactive suggestions and per-user snoozes must never leak across accounts.
+ assert.equal((await call(alice,'/v1/actions/plan','POST',{
+   kind:'create_task',payload:{title:'Alice approval only',dueAt:null}
+ })).status,201);
+ const aliceFeed=await call(alice,'/v1/proactive?offsetMinutes=420');
+ const bobFeed=await call(bob,'/v1/proactive?offsetMinutes=420');
+ assert.equal(aliceFeed.status,200);
+ assert.equal(bobFeed.status,200);
+ assert.ok(aliceFeed.data.items.some(item=>item.id==='approvals'));
+ assert.equal(bobFeed.data.items.some(item=>item.id==='approvals'),false);
+ assert.equal((await call(alice,'/v1/proactive/snooze','POST',{
+   id:'approvals',hours:4,offsetMinutes:420
+ })).status,200);
+ assert.equal((await call(alice,'/v1/proactive?offsetMinutes=420')).data.hiddenCount,1);
+ assert.equal((await call(bob,'/v1/proactive?offsetMinutes=420')).data.hiddenCount,0);
+
  // V4.4: server-side insights must never expose another tenant's task names.
  const aliceInsights=await call(alice,'/v1/insights?offsetMinutes=420');
  const bobInsights=await call(bob,'/v1/insights?offsetMinutes=420');
@@ -69,5 +85,5 @@ try{
  assert.equal((await call(alice,'/v1/focus-history/consent','POST',{enabled:false})).status,200);
  assert.equal((await call(alice,'/v1/focus-history')).data.days.length,0);
  assert.equal(JSON.parse(await readFile(join(dir,'users','alice.json'),'utf8')).tasks.length,0);
- console.log('TENANT_INTEGRATION_PASS: identity, weekly/daily planning isolation, focus opt-in/erasure, exports, auth, restart persistence');
+ console.log('TENANT_INTEGRATION_PASS: proactive tenant isolation, identity, weekly/daily planning isolation, focus opt-in/erasure, exports, auth, restart persistence');
 }finally {child?.kill('SIGTERM');await rm(dir,{recursive:true,force:true})}
