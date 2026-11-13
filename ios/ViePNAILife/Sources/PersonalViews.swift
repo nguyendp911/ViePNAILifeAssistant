@@ -104,9 +104,4 @@ struct LocalReminderView:View {
         }.navigationTitle("Nhắc việc")
     }
 }
-struct OpenViePNIntent:AppIntent {
-    static var title:LocalizedStringResource="Mở ViePN AI Life"
-    static var description=IntentDescription("Mở trợ lý cá nhân ViePN AI Life")
-    static var openAppWhenRun=true
-    func perform() async throws -> some IntentResult {return .result()}
-}
+
