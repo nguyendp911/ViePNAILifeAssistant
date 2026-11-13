@@ -1,3 +1,18 @@
+# ViePN AI Life Assistant V4.2 – AI Daily Assistant
+
+**Trạng thái:** Gateway V4.2 và giao diện iOS SwiftUI đã được cập nhật trên GitHub. Bản IPA do GitHub Actions build **chưa ký**. Xem [ghi chú kỹ thuật V4.2](docs/V4.2-DAILY-ASSISTANT.md).
+
+### V4.2 – Lập kế hoạch trong ngày
+
+- **Home / Smart Day → AI Daily Assistant**: chọn giờ làm việc, thời gian tập trung/nghỉ, và số công việc muốn xếp lịch.
+- Đề xuất thứ tự ưu tiên theo hạn; tránh trùng các khoảng Google Calendar bận khi **chủ động bật** tùy chọn.
+- Lời khuyên AI chỉ được gọi nếu người dùng **chủ động bật**; khi đó tiêu đề công việc và giờ gợi ý được gửi đến AI provider đã cấu hình.
+- Bản nháp không thay đổi dữ liệu. Gửi bản nháp sang Action Center chỉ tạo một yêu cầu **chờ phê duyệt**, không tự lưu/thi hành.
+- API: `POST /v1/daily-plan/preview`; kiểm thử TypeScript, Node logic và HTTP qua GitHub Actions.
+- Không thêm quyền iOS mới; việc cài IPA 7 ngày vẫn yêu cầu ký đúng app và Share Extension, phụ thuộc giới hạn App ID của Apple.
+
+---
+
 # ViePN AI Life Assistant V4.1 – Smart Day
 
 **Trạng thái:** Mã nguồn đã cập nhật trên GitHub; iOS IPA được build qua GitHub Actions và cần ký bằng Apple ID/profile của bạn trước khi cài. Kết quả build V4.1 xem ở tab Actions.
