@@ -66,7 +66,7 @@ async function aiChat(message:string){
 const server=createServer(async(req,res)=>{
   try{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
-    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.0.0',storage:postgresEnabled?'postgresql':'legacy-json'});
+    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.1.0',storage:postgresEnabled?'postgresql':'legacy-json'});
     if(postgresEnabled && req.method==='POST' && (path==='/v1/auth/register'||path==='/v1/auth/login')) {
       const input=await body(req);
       try {
