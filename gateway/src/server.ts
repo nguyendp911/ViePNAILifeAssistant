@@ -5,6 +5,7 @@ import {embeddingProvider,rebuildIndex,hybridSearch,semanticState} from './seman
 import {bumpRevision,syncSnapshot,snapshotETag} from './sync.ts';
 import {dailyBriefing} from './briefing.ts';
 import {personalInsights,parseContextRequest,buildPersonalContext} from './personalInsights.ts';
+import {getProactiveFeed,hideProactiveItem,resetProactiveItems} from './proactive.ts';
 import {parsePlanningOptions,previewDailyPlan} from './dailyPlanner.ts';
 import {parseWeekOptions,previewWeek} from './weeklyPlanner.ts';
 import {focusHistory,focusInsights,setFocusConsent,recordFocus} from './focusHabits.ts';
@@ -70,7 +71,7 @@ async function aiChat(message:string){
 const server=createServer(async(req,res)=>{
   try{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
-    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.4.0',storage:postgresEnabled?'postgresql':'legacy-json'});
+    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.5.0',storage:postgresEnabled?'postgresql':'legacy-json'});
     if(postgresEnabled && req.method==='POST' && (path==='/v1/auth/register'||path==='/v1/auth/login')) {
       const input=await body(req);
       try {
@@ -123,6 +124,22 @@ const server=createServer(async(req,res)=>{
     if(path==='/v1/integrations/google/gmail'&&req.method==='GET')return reply(res,200,await gmailSummaries(store,persist));
     if(path==='/v1/integrations/google/calendar'&&req.method==='GET')return reply(res,200,await calendarEvents(store,persist));
     if(path==='/v1/me'&&req.method==='GET')return reply(res,200,{id:account.id,displayName:account.displayName});
+    if(path==='/v1/proactive'&&req.method==='GET') {
+      const raw=new URL(req.url||'/', 'http://localhost').searchParams.get('offsetMinutes');
+      return reply(res,200,getProactiveFeed(store,raw===null?0:Number(raw)));
+    }
+    if(path==='/v1/proactive/snooze'&&req.method==='POST') {
+      const input=await body(req);
+      const result=hideProactiveItem(store,input.id,input.hours,input.offsetMinutes);
+      await persist();
+      return reply(res,200,result);
+    }
+    if(path==='/v1/proactive/reset'&&req.method==='POST') {
+      const input=await body(req);
+      const result=resetProactiveItems(store,input.offsetMinutes);
+      await persist();
+      return reply(res,200,result);
+    }
     if(path==='/v1/insights'&&req.method==='GET') {
       const raw=new URL(req.url||'/', 'http://localhost').searchParams.get('offsetMinutes');
       const offset=raw===null?0:Number(raw);
