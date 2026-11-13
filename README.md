@@ -1,3 +1,17 @@
+# ViePN AI Life Assistant V4.3 – Weekly Intelligence
+
+**Trạng thái:** Đã triển khai mã nguồn Gateway và giao diện iOS; IPA được build qua GitHub Actions ở dạng **chưa ký**, chưa kiểm thử trực tiếp trên iPhone.
+
+- **Home → Weekly Intelligence:** gợi ý lịch tuần này hoặc tuần sau, chọn ngày làm việc và khung giờ; phân loại ưu tiên, chia đều phiên tập trung, cảnh báo nguy cơ trễ hạn.
+- **Focus Habits (tự nguyện):** mặc định tắt, chỉ ghi phiên khi người dùng tự nhấn xác nhận; lưu số phút/số phiên/giờ bắt đầu theo ngày, không giám sát nền.
+- **Xóa dữ liệu thói quen:** tắt và xóa toàn bộ lịch sử bằng một thao tác có xác nhận.
+- **Action Center:** bản kế hoạch chỉ tạo workflow ghi chú chờ duyệt, không thực thi, không tạo lịch Google.
+- API: `POST /v1/weekly-plan/preview`, `GET /v1/focus-history`, `POST /v1/focus-history/consent`, `POST /v1/focus-history/record`.
+- Chi tiết tại [V4.3 Weekly Intelligence](docs/V4.3-WEEKLY-INTELLIGENCE.md). Lịch Google chỉ áp dụng cho Daily Planner V4.2, chưa hỗ trợ tránh giờ bận trong tuần.
+- Đây không phải cách vượt giới hạn 10 App ID của Apple ID miễn phí; app + Share Extension cần profile tương thích khi ký 7 ngày.
+
+---
+
 # ViePN AI Life Assistant V4.2 – AI Daily Assistant
 
 **Trạng thái:** Gateway V4.2 và giao diện iOS SwiftUI đã được cập nhật trên GitHub. Bản IPA do GitHub Actions build **chưa ký**. Xem [ghi chú kỹ thuật V4.2](docs/V4.2-DAILY-ASSISTANT.md).
