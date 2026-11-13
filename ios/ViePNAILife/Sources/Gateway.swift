@@ -295,6 +295,29 @@ import Foundation
         }
     }
 
+    // V4.4: insights are calculated privately on the authenticated Gateway.
+    func getPersonalInsights() async throws -> PersonalInsightsResponse {
+        let offset = TimeZone.current.secondsFromGMT() / 60
+        return try await call("/v1/insights?offsetMinutes=\(offset)")
+    }
+    // A fresh, explicit consent flag is required for every personal AI request.
+    func askPersonalAI(
+        question: String,
+        consent: Bool,
+        includeTasks: Bool,
+        includeMemories: Bool,
+        includeDocuments: Bool
+    ) async throws -> PersonalAIAnswer {
+        let request: [String: Any] = [
+            "question": question,
+            "consent": consent,
+            "includeTasks": includeTasks,
+            "includeMemories": includeMemories,
+            "includeDocuments": includeDocuments
+        ]
+        return try await call("/v1/ai/personal-ask", method: "POST", body: request)
+    }
+
     func loadDailyBriefing() async {
         do {
             let offset = TimeZone.current.secondsFromGMT() / 60
