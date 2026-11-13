@@ -32,7 +32,7 @@ struct StringValue: Codable {
         if let stringValue { try container.encode(stringValue) } else { try container.encodeNil() }
     }
 }
-struct Items<T: Codable>: Codable { let items: [T] }
+struct Items<T: Decodable>: Decodable { let items: [T] }
 struct ChatLine: Codable, Identifiable {
     let id: UUID
     let user: Bool
