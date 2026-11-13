@@ -178,6 +178,26 @@ struct DashboardView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    NavigationLink {
+                        ProactiveAssistantView(selectedTab: $selectedTab)
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 14) {
+                                Image(systemName: "bell.badge.fill")
+                                    .font(.title2).foregroundStyle(.orange)
+                                    .frame(width: 44, height: 44)
+                                    .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Proactive Assistant").font(.headline)
+                                    Text("Phát hiện việc cần chú ý · Tạm ẩn · Chuyển sang duyệt")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
                     LifeHeading(name: "Truy cập nhanh", detail: "Một chạm để bắt đầu công việc")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         LifeShortcut(title: "Trợ lý AI", subtitle: "Trò chuyện & giọng nói", symbol: "waveform", tint: LifeTheme.accent) { selectedTab = .ai }
