@@ -343,3 +343,22 @@ struct PersonalAIAnswer: Decodable {
     let contextUsed: ContextUsed
     let citations: [Citation]
 }
+
+
+// V4.5: proactive suggestions are read-only until the user explicitly acts.
+struct ProactiveFeed: Decodable {
+    let generatedAt: String
+    let localDate: String
+    let items: [ProactiveSuggestion]
+    let hiddenCount: Int
+    let totalCount: Int
+    let notice: String
+}
+struct ProactiveSuggestion: Decodable, Identifiable {
+    let id: String
+    let title: String
+    let detail: String
+    let level: String
+    let action: String
+    let dueAt: String?
+}
