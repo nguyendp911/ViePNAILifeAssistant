@@ -291,3 +291,55 @@ struct FocusHistoryStatus: Decodable {
     let days: [FocusDay]
     let insights: Insights
 }
+
+
+// V4.4 private progress overview, calculated by Gateway without external AI.
+struct PersonalInsightsResponse: Decodable {
+    struct Progress: Decodable {
+        let total: Int
+        let completed: Int
+        let open: Int
+        let completionPercent: Int
+        let overdue: Int
+        let dueToday: Int
+        let dueNext7Days: Int
+    }
+    struct Focus: Decodable {
+        let enabled: Bool
+        let last7DaysMinutes: Int
+        let previous7DaysMinutes: Int
+        let preferredHour: Int?
+        let totalSessions: Int
+    }
+    let generatedAt: String
+    let localDate: String
+    let timezoneOffsetMinutes: Int
+    let progress: Progress
+    let focus: Focus
+    let priorities: [PersonalInsightPriority]
+    let suggestions: [String]
+}
+struct PersonalInsightPriority: Decodable, Identifiable {
+    let id: String
+    let title: String
+    let dueAt: String?
+    let reason: String
+    let urgency: String
+}
+struct PersonalAIAnswer: Decodable {
+    struct ContextUsed: Decodable {
+        let tasks: Int
+        let memories: Int
+        let documents: Int
+    }
+    struct Citation: Decodable, Identifiable {
+        let documentId: String
+        let title: String
+        let ordinal: Int
+        var id: String { "\(documentId)-\(ordinal)" }
+    }
+    let reply: String
+    let configured: Bool
+    let contextUsed: ContextUsed
+    let citations: [Citation]
+}
