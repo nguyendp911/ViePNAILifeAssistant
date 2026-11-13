@@ -233,3 +233,61 @@ struct DailyPlanSlot: Decodable, Identifiable {
     let dueAt: String?
     var id: String { taskId }
 }
+
+
+// V4.3 weekly schedule: immutable proposed slots, never calendar bookings.
+struct WeeklyPlanPreview: Decodable {
+    struct Settings: Decodable {
+        let focusMinutes: Int
+        let breakMinutes: Int
+        let maxTasksPerDay: Int
+        let useHabits: Bool
+    }
+    let weekStart: String
+    let weekEnd: String
+    let generatedAt: String
+    let timezoneOffsetMinutes: Int
+    let settings: Settings
+    let habitSuggestedHour: Int?
+    let days: [WeeklyPlanDay]
+    let scheduledCount: Int
+    let unscheduledCount: Int
+    let atRiskCount: Int
+    let notice: String
+}
+struct WeeklyPlanDay: Decodable, Identifiable {
+    let date: String
+    let weekday: Int
+    let slots: [WeeklyPlanSlot]
+    var id: String { date }
+}
+struct WeeklyPlanSlot: Decodable, Identifiable {
+    let taskId: String
+    let title: String
+    let startAt: String
+    let endAt: String
+    let priority: String
+    let reason: String
+    let dueAt: String?
+    let deadlineAtRisk: Bool
+    var id: String { taskId }
+}
+struct FocusHistoryStatus: Decodable {
+    struct Insights: Decodable {
+        let enabled: Bool
+        let sessions: Int
+        let totalMinutes: Int
+        let days: Int
+        let preferredHour: Int?
+    }
+    struct FocusDay: Decodable, Identifiable {
+        let date: String
+        let minutes: Int
+        let sessions: Int
+        let hours: [String:Int]
+        var id: String { date }
+    }
+    let enabled: Bool
+    let days: [FocusDay]
+    let insights: Insights
+}
