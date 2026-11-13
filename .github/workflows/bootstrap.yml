@@ -1,0 +1,39 @@
+name: Restore ViePN AI Life V4.0 sources
+on:
+  push:
+    paths:
+      - 'source.bundle.b64'
+      - '.github/workflows/bootstrap.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Unpack full-source archive
+        run: |
+          python3 -m pip install --user brotli
+          python3 - <<'PY'
+          import base64, brotli, io, tarfile, pathlib
+          root=pathlib.Path('.')
+          archive=brotli.decompress(base64.b64decode((root/'source.bundle.b64').read_text().strip()))
+          with tarfile.open(fileobj=io.BytesIO(archive), mode='r:') as tf:
+              for item in tf.getmembers():
+                  path=pathlib.PurePosixPath(item.name)
+                  if path.is_absolute() or '..' in path.parts or item.issym() or item.islnk():
+                      raise RuntimeError("Unsafe archive member: "+item.name)
+              tf.extractall(root,filter='data')
+          print("Expanded source archive bytes:", len(archive))
+          PY
+      - name: Publish checked-in source tree
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs ios gateway branding .gitignore .github/workflows
+          git rm -f source.bundle.b64
+          git commit -m "Restore complete ViePN AI Life V4.0 SwiftUI and TypeScript source"
+          git push origin HEAD:main
