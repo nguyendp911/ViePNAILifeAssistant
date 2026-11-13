@@ -119,7 +119,7 @@ struct DashboardView: View {
                     }
                     .buttonStyle(.plain)
                     NavigationLink {
-                        DailyPlannerView()
+                        DailyPlanView(selectedTab: $selectedTab)
                     } label: {
                         LifePanel {
                             HStack(spacing: 14) {
