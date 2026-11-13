@@ -144,6 +144,78 @@ import Foundation
             accountName=account.displayName
         } catch { accountName="" }
     }
+    /// V4.2: plans are preview-only. Any optional external AI/Calendar access
+    /// requires explicit switches in the iPhone interface.
+    func previewDailyPlan(
+        startTime: String, endTime: String, focusMinutes: Int,
+        breakMinutes: Int, maxTasks: Int,
+        includeCalendar: Bool, useAI: Bool
+    ) async throws -> DailyPlanPreview {
+        let payload: [String: Any] = [
+            "offsetMinutes": TimeZone.current.secondsFromGMT() / 60,
+            "startTime": startTime,
+            "endTime": endTime,
+            "focusMinutes": focusMinutes,
+            "breakMinutes": breakMinutes,
+            "maxTasks": maxTasks,
+            "includeCalendar": includeCalendar,
+            "useAI": useAI
+        ]
+        return try await call("/v1/daily-plan/preview", method: "POST", body: payload)
+    }
+
+    /// Queue a note proposal for the existing Action Center. This does not
+    /// create the note until the user separately approves its workflow step.
+    func submitDailyPlanForApproval(_ plan: DailyPlanPreview) async -> Bool {
+        guard !plan.slots.isEmpty else {
+            status = "Kế hoạch trống, chưa có nội dung để lưu."
+            return false
+        }
+        let title = "Kế hoạch \(plan.localDate)"
+        let parser = ISO8601DateFormatter()
+        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let display = DateFormatter()
+        display.locale = Locale(identifier: "vi_VN")
+        display.timeZone = TimeZone.current
+        display.dateFormat = "HH:mm"
+        func shortTime(_ input: String) -> String {
+            guard let date = parser.date(from: input) else { return input }
+            return display.string(from: date)
+        }
+        var lines = ["\(title) – bản nháp chưa thực hiện", ""]
+        for (index, slot) in plan.slots.enumerated() {
+            lines.append("\(index + 1). \(shortTime(slot.startAt))–\(shortTime(slot.endAt)): \(slot.title)")
+            lines.append("   Ưu tiên: \(slot.reason); ước tính \(slot.estimatedMinutes) phút")
+        }
+        if plan.unscheduledCount > 0 {
+            lines.append("")
+            lines.append("Chưa xếp được \(plan.unscheduledCount) công việc. Xem lại khung giờ hoặc thời lượng.")
+        }
+        if let advice = plan.ai?.text, !advice.isEmpty {
+            lines.append("")
+            lines.append("Gợi ý AI (cần kiểm tra):")
+            lines.append(advice)
+        }
+        do {
+            let content = lines.joined(separator: "\n")
+            guard content.count <= 12000 else { throw APIError.text("Kế hoạch vượt giới hạn ghi chú.") }
+            let step: [String: Any] = [
+                "kind": "create_note",
+                "payload": ["title": title, "content": content]
+            ]
+            let _: WorkflowItem = try await call(
+                "/v1/workflows", method: "POST",
+                body: ["title": title, "steps": [step]]
+            )
+            await refresh()
+            status = "Đã gửi bản nháp đến Action Center. Hãy phê duyệt riêng để lưu ghi chú."
+            return true
+        } catch {
+            status = error.localizedDescription
+            return false
+        }
+    }
+
     func loadDailyBriefing() async {
         do {
             let offset = TimeZone.current.secondsFromGMT() / 60
