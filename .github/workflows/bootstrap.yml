@@ -33,7 +33,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md docs ios gateway branding .gitignore .github/workflows
+          git add README.md docs ios gateway branding .gitignore
           git rm -f source.bundle.b64
           git commit -m "Restore complete ViePN AI Life V4.0 SwiftUI and TypeScript source"
           git push origin HEAD:main
