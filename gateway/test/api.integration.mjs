@@ -19,6 +19,15 @@ try {
  assert.ok(ready,'server did not start');
  assert.equal((await req('/v1/skills','GET',undefined,false)).status,401);
  assert.equal((await req('/v1/briefing?offsetMinutes=420','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/daily-plan/preview','POST',{},false)).status,401);
+ let daily=await req('/v1/daily-plan/preview','POST',{offsetMinutes:420,startTime:'08:00',endTime:'20:00'});
+ assert.equal(daily.status,200);
+ assert.equal(daily.body.calendarUsed,false);
+ assert.equal(daily.body.ai,null);
+ assert.deepEqual(daily.body.slots,[]);
+ assert.equal((await req('/v1/daily-plan/preview','POST',{startTime:'20:00',endTime:'08:00'})).status,400);
+ assert.equal((await req('/v1/daily-plan/preview','POST',{includeCalendar:true})).status,409);
+ assert.equal((await req('/v1/daily-plan/preview','POST',{useAI:true})).status,503);
  let briefing=await req('/v1/briefing?offsetMinutes=420');
  assert.equal(briefing.status,200);
  assert.equal(briefing.body.timezoneOffsetMinutes,420);
@@ -47,6 +56,11 @@ try {
  flow=r.body;
  r=await req(`/v1/workflows/${flowId}/steps/${flow.steps[1].id}/approve`,'POST');assert.equal(r.status,200);
  assert.equal(r.body.status,'completed');
+ daily=await req('/v1/daily-plan/preview','POST',{offsetMinutes:420,startTime:'08:00',endTime:'20:00',focusMinutes:25,breakMinutes:5});
+ assert.equal(daily.status,200);
+ assert.equal(daily.body.settings.focusMinutes,25);
+ assert.equal(daily.body.unscheduledCount+daily.body.slots.length,1);
+ assert.equal(daily.body.notice.includes('không đặt lịch'),true);
  r=await req('/v1/tasks');assert.equal(r.status,200);assert.equal(r.body.items.length,1);
  const taskId=r.body.items[0].id;
  r=await req(`/v1/tasks/${taskId}`,'PATCH',{done:true});assert.equal(r.status,200);assert.equal(r.body.done,true);
@@ -61,5 +75,5 @@ try {
  r=await req('/v1/workflows/ai-preview','POST',{request:'Lập lịch tuần này'});assert.equal(r.status,503);
  r=await req('/v1/workflows/preview','POST',{title:'Không duyệt',memory:'Thông tin cá nhân'});
  assert.equal(r.status,400);
- console.log('API_INTEGRATION_PASS: auth, profiles, memory consent/search, automation, draft, plan preview, approval, completed task, read-only Smart Day briefing, personal export');
+ console.log('API_INTEGRATION_PASS: auth, profiles, memory consent/search, automation, draft, plan preview, approval, completed task, read-only Smart Day briefing, V4.2 daily-plan preview, personal export');
 }finally{child.kill('SIGTERM');await rm(dir,{recursive:true,force:true})}
