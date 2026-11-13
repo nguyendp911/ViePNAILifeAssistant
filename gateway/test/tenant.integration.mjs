@@ -18,6 +18,21 @@ try{
  assert.equal((await call(bob,'/v1/tasks','POST',{title:'Private Bob task'})).status,201);
  assert.equal((await call(alice,'/v1/memories','POST',{text:'Private Alice memory',consent:true})).status,201);
  assert.equal((await call(alice,'/v1/tasks')).data.items.length,0);
+ // V4.4: server-side insights must never expose another tenant's task names.
+ const aliceInsights=await call(alice,'/v1/insights?offsetMinutes=420');
+ const bobInsights=await call(bob,'/v1/insights?offsetMinutes=420');
+ assert.equal(aliceInsights.status,200);
+ assert.equal(bobInsights.status,200);
+ assert.equal(aliceInsights.data.progress.total,0);
+ assert.equal(bobInsights.data.progress.total,1);
+ assert.equal(JSON.stringify(aliceInsights.data).includes('Private Bob task'),false);
+ assert.equal((await call(alice,'/v1/ai/personal-ask','POST',{
+   question:'Công việc gì?',consent:false,includeTasks:true,includeMemories:false,includeDocuments:false
+ })).status,400);
+ assert.equal((await call(bob,'/v1/ai/personal-ask','POST',{
+   question:'Công việc gì?',consent:true,includeTasks:true,includeMemories:false,includeDocuments:false
+ })).status,503);
+
  // V4.2: plans must only include tasks owned by the authenticated tenant.
  const options={offsetMinutes:420,startTime:'08:00',endTime:'20:00',focusMinutes:25,breakMinutes:5};
  const alicePlan=await call(alice,'/v1/daily-plan/preview','POST',options);
