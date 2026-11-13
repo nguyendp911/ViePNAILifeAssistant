@@ -27,7 +27,9 @@ export function dailyBriefing(store:Store, offsetMinutes:number=0, now:Date=new 
   const start=Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate())-offsetMs;
   const end=start+86_400_000;
   const tomorrow=end+86_400_000;
-  // Do not initialize or mutate any legacy store fields while serving a GET.\n  const ws=store as Partial<WorkflowStore>;\n  const personal=store as Partial<PersonalStore> & {pendingAutomations?:PendingAutomation[]};
+  // Do not initialize or mutate any legacy store fields while serving a GET.
+  const ws=store as Partial<WorkflowStore>;
+  const personal=store as Partial<PersonalStore> & {pendingAutomations?:PendingAutomation[]};
   const waitingActions=store.actions.filter(item=>item.status==='awaiting_approval').length;
   const waitingWorkflows=(ws.workflows??[]).filter(item=>item.status==='awaiting_approval').length;
   const waitingAutomations=(personal.pendingAutomations??[]).filter(item=>item.status==='awaiting_approval').length;
