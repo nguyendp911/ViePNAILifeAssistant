@@ -25,7 +25,7 @@ enum SecureToken {
     func unlock() async {
         let context=LAContext()
         var error:NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication,&error) else { unlocked=false; return }
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else { unlocked=false; return }
         do {unlocked = try await context.evaluatePolicy(.deviceOwnerAuthentication,localizedReason:"Mở khóa ViePN AI Life")}
         catch {unlocked=false}
     }
