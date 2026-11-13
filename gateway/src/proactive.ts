@@ -4,7 +4,7 @@
  * Suppression is user-initiated, tenant-scoped and automatically expires.
  */
 import type {Store,Task} from './core.ts';
-import type {WorkflowStore} from './workflows.ts';
+import {createWorkflow,type Workflow,type WorkflowStore} from './workflows.ts';
 import type {PersonalStore,PendingAutomation} from './personal.ts';
 
 const HOUR=3_600_000;
@@ -94,4 +94,28 @@ export function resetProactiveItems(store:Store,offset:number,now=new Date()):Pr
   localStart(now,offset);
   (store as PreferenceStore).proactivePrefs={};
   return getProactiveFeed(store,offset,now);
+}
+
+/** Explicit user gesture creates ONE manual-approval note proposal.
+ * No scheduled job, messaging, calendar mutation, or automatic execution.
+ */
+export function queueProactiveProposal(store:Store,id:unknown,offset:number,now=new Date()):Workflow {
+  localStart(now,offset);
+  if(typeof id!=='string'||id.length>100)throw new Error('invalid suggestion id');
+  const item=candidates(store,offset,now).find(x=>x.id===id);
+  if(!item||item.action!=='tasks')throw new Error('no task proposal available');
+  const title='Đề xuất xử lý: '+item.title.slice(0,130);
+  const workflowStore=store as WorkflowStore;
+  const existing=(workflowStore.workflows??[]).find(w=>w.title===title&&
+    (w.status==='awaiting_approval'||w.status==='in_progress'));
+  if(existing)return existing; // safe and idempotent for pending proposals
+  const content=[
+    'ĐÂY LÀ BẢN NHÁP CHỜ PHÊ DUYỆT. KHÔNG TỰ THỰC HIỆN.',
+    'Công việc: '+item.title,
+    'Thời hạn: '+(item.dueAt??'Chưa đặt'),
+    'Lý do ưu tiên: '+item.detail,
+    'Gợi ý: Kiểm tra tiến độ, sắp xếp thời gian phù hợp và cập nhật người có liên quan nếu cần.',
+    'ViePN không gửi thông báo hay thay đổi hạn công việc.',
+  ].join('\n');
+  return createWorkflow(workflowStore,title,[{kind:'create_note',payload:{title,content}}]);
 }
