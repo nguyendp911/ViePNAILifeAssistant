@@ -158,6 +158,26 @@ struct DashboardView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    NavigationLink {
+                        PersonalInsightsView()
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 14) {
+                                Image(systemName: "brain.head.profile")
+                                    .font(.title2).foregroundStyle(LifeTheme.accent)
+                                    .frame(width: 44, height: 44)
+                                    .background(LifeTheme.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Personal Intelligence").font(.headline)
+                                    Text("Tiến độ · Ưu tiên · AI có ngữ cảnh theo quyền bạn chọn")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
                     LifeHeading(name: "Truy cập nhanh", detail: "Một chạm để bắt đầu công việc")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         LifeShortcut(title: "Trợ lý AI", subtitle: "Trò chuyện & giọng nói", symbol: "waveform", tint: LifeTheme.accent) { selectedTab = .ai }
