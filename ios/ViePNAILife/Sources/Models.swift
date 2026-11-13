@@ -149,3 +149,42 @@ struct SemanticSearchResult: Codable {
     let mode: String
     let items: [KnowledgeCitation]
 }
+
+
+// V4.1 Smart Day: a read-only, per-account briefing. No AI/provider call.
+struct DailyBriefing: Decodable {
+    struct Summary: Decodable {
+        let openTasks: Int
+        let completedTasks: Int
+        let overdue: Int
+        let dueToday: Int
+        let upcoming: Int
+        let pendingApprovals: Int
+        let scheduledSoon: Int
+    }
+    struct Approvals: Decodable {
+        let actions: Int
+        let workflows: Int
+        let automations: Int
+        let total: Int
+    }
+    let generatedAt: String
+    let localDate: String
+    let timezoneOffsetMinutes: Int
+    let summary: Summary
+    let approvals: Approvals
+    let priorities: [DailyBriefingTask]
+    let upcomingAutomations: [DailyAutomation]
+}
+struct DailyBriefingTask: Decodable, Identifiable {
+    let id: String
+    let title: String
+    let dueAt: String?
+    let done: Bool
+    let kind: String
+}
+struct DailyAutomation: Decodable, Identifiable {
+    let id: String
+    let title: String
+    let nextRunAt: String
+}
