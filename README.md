@@ -1,3 +1,16 @@
+# ViePN AI Life V4.4 – Personal Intelligence
+
+**Status:** Gateway & SwiftUI source updated; CI builds unsigned IPA. Device testing and Apple free-ID signing remain separate.
+
+- **Personal Intelligence (Home):** task completion %, overdue and upcoming work, 8 bounded priorities, optional self-reported focus-history comparison.
+- **Personal AI Assistant:** each question requires selecting task/memory/document sharing scopes and ticking consent again. All data scopes default off; no hidden account data transfer.
+- **Protected requests:** `GET /v1/insights` is private and read-only; `POST /v1/ai/personal-ask` rejects absent consent and returns 503 without forwarding data when no AI provider is configured.
+- **No autonomous changes:** AI suggestions cannot create events, tasks, emails or modify account data.
+- [V4.4 implementation notes](docs/V4.4-PERSONAL-INTELLIGENCE.md).
+- IPA contains the Share Extension and is **unsigned**. Apple free-ID 7-day signing is still subject to quota.
+
+---
+
 # ViePN AI Life Assistant V4.3 – Weekly Intelligence
 
 **Trạng thái:** Đã triển khai mã nguồn Gateway và giao diện iOS; IPA được build qua GitHub Actions ở dạng **chưa ký**, chưa kiểm thử trực tiếp trên iPhone.
