@@ -18,6 +18,15 @@ try{
  assert.equal((await call(bob,'/v1/tasks','POST',{title:'Private Bob task'})).status,201);
  assert.equal((await call(alice,'/v1/memories','POST',{text:'Private Alice memory',consent:true})).status,201);
  assert.equal((await call(alice,'/v1/tasks')).data.items.length,0);
+ // V4.2: plans must only include tasks owned by the authenticated tenant.
+ const options={offsetMinutes:420,startTime:'08:00',endTime:'20:00',focusMinutes:25,breakMinutes:5};
+ const alicePlan=await call(alice,'/v1/daily-plan/preview','POST',options);
+ const bobPlan=await call(bob,'/v1/daily-plan/preview','POST',options);
+ assert.equal(alicePlan.status,200);
+ assert.equal(bobPlan.status,200);
+ assert.equal(alicePlan.data.slots.length+alicePlan.data.unscheduledCount,0);
+ assert.equal(bobPlan.data.slots.length+bobPlan.data.unscheduledCount,1);
+ assert.equal(JSON.stringify(alicePlan.data).includes('Private Bob task'),false);
  assert.equal((await call(bob,'/v1/memories')).data.items.length,0);
  assert.equal((await call(bob,'/v1/export')).data.memories.length,0);
  assert.equal((await call(alice,'/v1/export')).data.tasks.length,0);
@@ -27,5 +36,5 @@ try{
  assert.equal((await call(bob,'/v1/tasks')).data.items[0].title,'Private Bob task');
  assert.equal((await call(alice,'/v1/memories')).data.items[0].text,'Private Alice memory');
  assert.equal(JSON.parse(await readFile(join(dir,'users','alice.json'),'utf8')).tasks.length,0);
- console.log('TENANT_INTEGRATION_PASS: identity, isolation, exports, auth, restart persistence');
+ console.log('TENANT_INTEGRATION_PASS: identity, daily planning isolation, exports, auth, restart persistence');
 }finally {child?.kill('SIGTERM');await rm(dir,{recursive:true,force:true})}
