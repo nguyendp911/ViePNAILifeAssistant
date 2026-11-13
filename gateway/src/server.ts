@@ -3,6 +3,7 @@ import {configured as googleConfigured,startOAuth,consumeOAuthState,exchangeCode
 import {knowledge,addDocument,deleteDocument,retrieve,evidenceAnswer,buildGroundedPrompt} from './knowledge.ts';
 import {embeddingProvider,rebuildIndex,hybridSearch,semanticState} from './semantic.ts';
 import {bumpRevision,syncSnapshot,snapshotETag} from './sync.ts';
+import {dailyBriefing} from './briefing.ts';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {dirname,resolve} from 'node:path';
 import {postgresEnabled,initPostgres,registerUser,loginUser,resolveSession,revokeSession,readUserState,writeUserState} from './postgres.ts';
@@ -118,6 +119,11 @@ const server=createServer(async(req,res)=>{
     if(path==='/v1/integrations/google/gmail'&&req.method==='GET')return reply(res,200,await gmailSummaries(store,persist));
     if(path==='/v1/integrations/google/calendar'&&req.method==='GET')return reply(res,200,await calendarEvents(store,persist));
     if(path==='/v1/me'&&req.method==='GET')return reply(res,200,{id:account.id,displayName:account.displayName});
+    if(path==='/v1/briefing'&&req.method==='GET') {
+      const raw=new URL(req.url||'/', 'http://localhost').searchParams.get('offsetMinutes');
+      const offset=raw===null?0:Number(raw);
+      return reply(res,200,dailyBriefing(store,offset));
+    }
     if(req.method==='GET'&&path==='/v1/sync') {
       const etag=snapshotETag(store);
       if(req.headers['if-none-match']===etag) {res.writeHead(304,{'etag':etag,'cache-control':'private, no-store'});res.end();return;}
