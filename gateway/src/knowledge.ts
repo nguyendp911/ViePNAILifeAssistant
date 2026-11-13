@@ -8,7 +8,7 @@ export interface Evidence {id:string;documentId:string;title:string;ordinal:numb
 
 /** Unicode-aware lexical retrieval, NOT semantic embeddings. Does not contact a model. */
 export const normalize=(text:string)=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
-export const tokens=(text:string)=>normalize(text).match(/[\p{L}\p{N}]+/gu)||[];
+export const tokens=(text:string):string[]=>normalize(text).match(/[\p{L}\p{N}]+/gu)||[];
 export function knowledge(store:Store):KnowledgeState {
   const state=store as Store & {knowledge?:KnowledgeState};
   if(!state.knowledge)state.knowledge={documents:[],chunks:[]};
