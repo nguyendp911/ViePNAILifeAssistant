@@ -16,6 +16,7 @@ import Foundation
     @Published var knowledgeDocs:[KnowledgeDoc] = []
     @Published var dailyBriefing: DailyBriefing?
     @Published var dailyBriefingStatus = ""
+    @Published var proactiveFeed: ProactiveFeed?
     @Published var focusHistoryStatus: FocusHistoryStatus?
     struct AuthResponse: Decodable {
         struct Account: Decodable { let id:String; let displayName:String }
@@ -72,6 +73,7 @@ import Foundation
         tasks=[]; memories=[]; actions=[]; workflows=[]; notes=[]
         profiles=[]; automations=[]; approvals=[]; skills=[]; knowledgeDocs=[]; accountName=""
         dailyBriefing=nil; dailyBriefingStatus=""
+        proactiveFeed=nil
         focusHistoryStatus=nil
         status=SecureToken.save(token) ? "Đã lưu cấu hình. Hãy đồng bộ tài khoản mới." : "Không thể lưu token an toàn."
     }
@@ -316,6 +318,30 @@ import Foundation
             "includeDocuments": includeDocuments
         ]
         return try await call("/v1/ai/personal-ask", method: "POST", body: request)
+    }
+
+    /// V4.5: checks suggestions only on user open or explicit refresh.
+    func loadProactiveFeed() async throws {
+        let offset = TimeZone.current.secondsFromGMT() / 60
+        proactiveFeed = try await call("/v1/proactive?offsetMinutes=\(offset)")
+    }
+    func snoozeProactive(_ id: String, hours: Int) async throws {
+        let offset = TimeZone.current.secondsFromGMT() / 60
+        proactiveFeed = try await call("/v1/proactive/snooze",method:"POST",
+            body:["id":id,"hours":hours,"offsetMinutes":offset])
+    }
+    func restoreProactive() async throws {
+        let offset = TimeZone.current.secondsFromGMT() / 60
+        proactiveFeed = try await call("/v1/proactive/reset",method:"POST",
+            body:["offsetMinutes":offset])
+    }
+    /// Explicit request creates a note workflow, which still needs step approval.
+    func queueProactiveProposal(_ id: String) async throws {
+        let offset = TimeZone.current.secondsFromGMT() / 60
+        let _: WorkflowItem = try await call("/v1/proactive/queue",method:"POST",
+            body:["id":id,"offsetMinutes":offset])
+        await refresh()
+        try await loadProactiveFeed()
     }
 
     func loadDailyBriefing() async {
