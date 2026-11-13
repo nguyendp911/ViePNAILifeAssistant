@@ -1,7 +1,7 @@
 import {validateDate} from './core.ts';
 
 export type ProposedStep={kind:'create_note'|'create_task'|'save_memory';payload:Record<string,unknown>};
-export interface PlanPreview{title:string;steps:ProposedStep[];requiresApproval:true;executed:false;origin:'structured_user_request'}
+export interface PlanPreview{title:string;steps:ProposedStep[];requiresApproval:true;executed:false;origin:'structured_user_request'|'ai_generated'}
 const text=(value:unknown,max:number,label:string):string=>{
   if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error('invalid '+label);
   return value.trim();
