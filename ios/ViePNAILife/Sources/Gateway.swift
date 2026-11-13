@@ -14,6 +14,8 @@ import Foundation
     @Published var approvals:[PendingApproval] = []
     @Published var skills:[SkillInfo] = []
     @Published var knowledgeDocs:[KnowledgeDoc] = []
+    @Published var dailyBriefing: DailyBriefing?
+    @Published var dailyBriefingStatus = ""
     struct AuthResponse: Decodable {
         struct Account: Decodable { let id:String; let displayName:String }
         let account:Account
@@ -68,6 +70,7 @@ import Foundation
         UserDefaults.standard.set(baseURL.trimmingCharacters(in:.whitespacesAndNewlines),forKey:"viepn.base_url")
         tasks=[]; memories=[]; actions=[]; workflows=[]; notes=[]
         profiles=[]; automations=[]; approvals=[]; skills=[]; knowledgeDocs=[]; accountName=""
+        dailyBriefing=nil; dailyBriefingStatus=""
         status=SecureToken.save(token) ? "Đã lưu cấu hình. Hãy đồng bộ tài khoản mới." : "Không thể lưu token an toàn."
     }
     private func call<T:Decodable>(_ path:String, method:String="GET", body:Any?=nil) async throws -> T {
@@ -140,6 +143,17 @@ import Foundation
             let account:GatewayIdentity=try await call("/v1/me")
             accountName=account.displayName
         } catch { accountName="" }
+    }
+    func loadDailyBriefing() async {
+        do {
+            let offset = TimeZone.current.secondsFromGMT() / 60
+            let result: DailyBriefing = try await call("/v1/briefing?offsetMinutes=\(offset)")
+            dailyBriefing = result
+            dailyBriefingStatus = ""
+        } catch {
+            dailyBriefing = nil
+            dailyBriefingStatus = error.localizedDescription
+        }
     }
     func chat(_ message:String) async throws -> ChatReply { try await call("/v1/chat",method:"POST",body:["message":message]) }
     func refresh() async {
