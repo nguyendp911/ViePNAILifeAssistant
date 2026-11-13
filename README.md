@@ -1,3 +1,16 @@
+# ViePN AI Life V4.5 — Proactive Assistant
+
+**Đã thêm mã nguồn Gateway + giao diện SwiftUI.** Build iOS qua GitHub Actions tạo IPA **chưa ký**.
+
+- **Home → Proactive Assistant:** phát hiện công việc quá hạn, đến hạn trong 3 ngày, yêu cầu chờ duyệt và đề xuất lập kế hoạch khi có nhiều việc.
+- **Tạm ẩn / nhắc lại:** 4 giờ, 24 giờ (API), hoặc 7 ngày; tự hết hạn và có thể hiện lại.
+- **Soạn đề xuất:** chỉ tạo workflow ghi chú đang chờ **phê duyệt thủ công** trong Action Center; không tự thực thi.
+- **Quyền riêng tư:** chỉ tổng hợp dữ liệu của tài khoản trên Gateway; không AI, Google hay theo dõi nền.
+- **REST:** `GET /v1/proactive`, `POST /v1/proactive/snooze`, `POST /v1/proactive/reset`, `POST /v1/proactive/queue`.
+- Xem [tài liệu V4.5](docs/V4.5-PROACTIVE-ASSISTANT.md). Chưa kiểm thử thao tác thực tế trên iPhone và không bỏ giới hạn App ID của Apple.
+
+---
+
 # ViePN AI Life V4.4 – Personal Intelligence
 
 **Status:** Gateway & SwiftUI source updated; CI builds unsigned IPA. Device testing and Apple free-ID signing remain separate.
