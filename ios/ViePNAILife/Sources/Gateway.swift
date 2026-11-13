@@ -16,6 +16,7 @@ import Foundation
     @Published var knowledgeDocs:[KnowledgeDoc] = []
     @Published var dailyBriefing: DailyBriefing?
     @Published var dailyBriefingStatus = ""
+    @Published var focusHistoryStatus: FocusHistoryStatus?
     struct AuthResponse: Decodable {
         struct Account: Decodable { let id:String; let displayName:String }
         let account:Account
@@ -71,6 +72,7 @@ import Foundation
         tasks=[]; memories=[]; actions=[]; workflows=[]; notes=[]
         profiles=[]; automations=[]; approvals=[]; skills=[]; knowledgeDocs=[]; accountName=""
         dailyBriefing=nil; dailyBriefingStatus=""
+        focusHistoryStatus=nil
         status=SecureToken.save(token) ? "Đã lưu cấu hình. Hãy đồng bộ tài khoản mới." : "Không thể lưu token an toàn."
     }
     private func call<T:Decodable>(_ path:String, method:String="GET", body:Any?=nil) async throws -> T {
@@ -209,6 +211,83 @@ import Foundation
             )
             await refresh()
             status = "Đã gửi bản nháp đến Action Center. Hãy phê duyệt riêng để lưu ghi chú."
+            return true
+        } catch {
+            status = error.localizedDescription
+            return false
+        }
+    }
+
+    // V4.3: weekly schedule is a read-only preview; never writes to Calendar.
+    func previewWeeklyPlan(
+        weekOffset: Int, workdays: [Int], startTime: String,
+        endTime: String, focusMinutes: Int, breakMinutes: Int,
+        maxTasksPerDay: Int, useHabits: Bool
+    ) async throws -> WeeklyPlanPreview {
+        let payload: [String: Any] = [
+            "offsetMinutes": TimeZone.current.secondsFromGMT() / 60,
+            "weekOffset": weekOffset, "workdays": workdays,
+            "startTime": startTime, "endTime": endTime,
+            "focusMinutes": focusMinutes, "breakMinutes": breakMinutes,
+            "maxTasksPerDay": maxTasksPerDay, "useHabits": useHabits
+        ]
+        return try await call("/v1/weekly-plan/preview", method: "POST", body: payload)
+    }
+    func loadFocusHistory() async throws {
+        focusHistoryStatus = try await call("/v1/focus-history")
+    }
+    func changeFocusConsent(_ enabled: Bool) async throws {
+        focusHistoryStatus = try await call("/v1/focus-history/consent", method: "POST", body: ["enabled": enabled])
+    }
+    func recordFocusSession(_ minutes: Int) async throws {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let payload: [String: Any] = [
+            "minutes": minutes,
+            "offsetMinutes": TimeZone.current.secondsFromGMT() / 60,
+            "hour": hour
+        ]
+        focusHistoryStatus = try await call("/v1/focus-history/record", method: "POST", body: payload)
+    }
+    // Queue a note for separate approval; no change to Calendar or tasks.
+    func sendWeeklyPlanForApproval(_ plan: WeeklyPlanPreview) async -> Bool {
+        guard plan.scheduledCount > 0 else {
+            status = "Chưa có công việc được xếp để lưu thành ghi chú."
+            return false
+        }
+        let title = "Kế hoạch tuần \(plan.weekStart)"
+        let format = ISO8601DateFormatter()
+        format.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let display = DateFormatter()
+        display.locale = Locale(identifier: "vi_VN")
+        display.timeZone = TimeZone.current
+        display.dateFormat = "HH:mm"
+        func short(_ value: String) -> String {
+            guard let date = format.date(from: value) else { return value }
+            return display.string(from: date)
+        }
+        var lines = ["\(title) – chỉ là dự kiến, chưa thực hiện", ""]
+        for day in plan.days where !day.slots.isEmpty {
+            lines.append(day.date + ":")
+            for slot in day.slots {
+                let warning = slot.deadlineAtRisk ? " [CẢNH BÁO: QUÁ HẠN]" : ""
+                lines.append("  \(short(slot.startAt))–\(short(slot.endAt)) \(slot.title)\(warning)")
+            }
+        }
+        lines.append("")
+        lines.append("Chưa xếp: \(plan.unscheduledCount) | Nguy cơ trễ hạn: \(plan.atRiskCount)")
+        do {
+            let content = lines.joined(separator: "\n")
+            guard content.count <= 12000 else { throw APIError.text("Kế hoạch vượt giới hạn ghi chú.") }
+            let step: [String: Any] = [
+                "kind": "create_note",
+                "payload": ["title": title, "content": content]
+            ]
+            let _: WorkflowItem = try await call(
+                "/v1/workflows", method: "POST",
+                body: ["title": title, "steps": [step]]
+            )
+            await refresh()
+            status = "Kế hoạch đã chờ duyệt trong Action Center; chưa được lưu thành ghi chú."
             return true
         } catch {
             status = error.localizedDescription
