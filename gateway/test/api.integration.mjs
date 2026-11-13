@@ -18,6 +18,18 @@ try {
  for(let i=0;i<60;i++){try{if((await req('/health')).status===200){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,100))}
  assert.ok(ready,'server did not start');
  assert.equal((await req('/v1/skills','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/insights?offsetMinutes=420','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/ai/personal-ask','POST',{},false)).status,401);
+ let insights=await req('/v1/insights?offsetMinutes=420');
+ assert.equal(insights.status,200);
+ assert.equal(insights.body.progress.total,0);
+ assert.equal(insights.body.progress.completionPercent,0);
+ assert.equal((await req('/v1/insights?offsetMinutes=1200')).status,400);
+ const ctxRequest={question:'Tôi cần ưu tiên gì?',consent:true,includeTasks:true,includeMemories:false,includeDocuments:false};
+ assert.equal((await req('/v1/ai/personal-ask','POST',{...ctxRequest,consent:false})).status,400);
+ assert.equal((await req('/v1/ai/personal-ask','POST',{question:'x',consent:true})).status,400);
+ assert.equal((await req('/v1/ai/personal-ask','POST',ctxRequest)).status,503); // provider intentionally absent
+
  assert.equal((await req('/v1/briefing?offsetMinutes=420','GET',undefined,false)).status,401);
  assert.equal((await req('/v1/daily-plan/preview','POST',{},false)).status,401);
  assert.equal((await req('/v1/weekly-plan/preview','POST',{},false)).status,401);
@@ -90,6 +102,10 @@ try {
  weekly=await req('/v1/weekly-plan/preview','POST',{offsetMinutes:420,weekOffset:1});
  assert.equal(weekly.status,200);
  assert.equal(weekly.body.scheduledCount,0); // task was just marked complete
+ insights=await req('/v1/insights?offsetMinutes=420');
+ assert.equal(insights.status,200);
+ assert.equal(insights.body.progress.completed,1);
+ assert.equal(insights.body.progress.open,0);
  r=await req('/v1/export');assert.equal(r.status,200);assert.equal(r.body.schemaVersion,1);
  assert.equal(r.body.tasks[0].done,true);assert.equal(r.body.notes.length,1);
  assert.equal(Object.hasOwn(r.body,'token'),false);
