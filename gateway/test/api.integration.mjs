@@ -18,6 +18,15 @@ try {
  for(let i=0;i<60;i++){try{if((await req('/health')).status===200){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,100))}
  assert.ok(ready,'server did not start');
  assert.equal((await req('/v1/skills','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/proactive?offsetMinutes=420','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/proactive/snooze','POST',{},false)).status,401);
+ assert.equal((await req('/v1/proactive/queue','POST',{},false)).status,401);
+ assert.equal((await req('/v1/proactive/reset','POST',{},false)).status,401);
+ let feed=await req('/v1/proactive?offsetMinutes=420');
+ assert.equal(feed.status,200);
+ assert.deepEqual(feed.body.items,[]);
+ assert.equal((await req('/v1/proactive?offsetMinutes=999')).status,400);
+
  assert.equal((await req('/v1/insights?offsetMinutes=420','GET',undefined,false)).status,401);
  assert.equal((await req('/v1/ai/personal-ask','POST',{},false)).status,401);
  let insights=await req('/v1/insights?offsetMinutes=420');
@@ -93,18 +102,44 @@ try {
  assert.equal(daily.body.notice.includes('không đặt lịch'),true);
  r=await req('/v1/tasks');assert.equal(r.status,200);assert.equal(r.body.items.length,1);
  const taskId=r.body.items[0].id;
+ // Proactive workflow: recommendations are previews, and explicit queuing never executes steps.
+ let overdue=await req('/v1/tasks','POST',{title:'Việc quá hạn cần nhắc',dueAt:'2020-01-01T00:00:00Z'});
+ assert.equal(overdue.status,201);
+ const urgentId='task-'+overdue.body.id;
+ feed=await req('/v1/proactive?offsetMinutes=420');
+ assert.equal(feed.status,200);
+ assert.ok(feed.body.items.some(x=>x.id===urgentId));
+ assert.equal((await req('/v1/proactive/snooze','POST',{id:'task-unknown',hours:4,offsetMinutes:420})).status,400);
+ let queued=await req('/v1/proactive/queue','POST',{id:urgentId,offsetMinutes:420});
+ assert.equal(queued.status,201);
+ assert.equal(queued.body.status,'awaiting_approval');
+ assert.equal(queued.body.steps[0].kind,'create_note');
+ const queuedAgain=await req('/v1/proactive/queue','POST',{id:urgentId,offsetMinutes:420});
+ assert.equal(queuedAgain.body.id,queued.body.id);
+ assert.equal((await req('/v1/notes')).body.items.length,1); // no approval yet
+ feed=await req('/v1/proactive/snooze','POST',{id:urgentId,hours:4,offsetMinutes:420});
+ assert.equal(feed.status,200);
+ assert.ok(feed.body.hiddenCount>=1);
+ feed=await req('/v1/proactive/reset','POST',{offsetMinutes:420});
+ assert.equal(feed.status,200);
+ assert.ok(feed.body.items.some(x=>x.id===urgentId));
+ r=await req('/v1/tasks/'+overdue.body.id,'PATCH',{done:true});
+ assert.equal(r.status,200);
+ feed=await req('/v1/proactive?offsetMinutes=420');
+ assert.equal(feed.body.items.some(x=>x.id===urgentId),false);
+
  r=await req(`/v1/tasks/${taskId}`,'PATCH',{done:true});assert.equal(r.status,200);assert.equal(r.body.done,true);
  briefing=await req('/v1/briefing?offsetMinutes=420');
  assert.equal(briefing.status,200);
  assert.equal(briefing.body.summary.openTasks,0);
- assert.equal(briefing.body.summary.completedTasks,1);
+ assert.equal(briefing.body.summary.completedTasks,2);
  assert.equal(Object.hasOwn(briefing.body,'token'),false);
  weekly=await req('/v1/weekly-plan/preview','POST',{offsetMinutes:420,weekOffset:1});
  assert.equal(weekly.status,200);
  assert.equal(weekly.body.scheduledCount,0); // task was just marked complete
  insights=await req('/v1/insights?offsetMinutes=420');
  assert.equal(insights.status,200);
- assert.equal(insights.body.progress.completed,1);
+ assert.equal(insights.body.progress.completed,2);
  assert.equal(insights.body.progress.open,0);
  r=await req('/v1/export');assert.equal(r.status,200);assert.equal(r.body.schemaVersion,1);
  assert.equal(r.body.tasks[0].done,true);assert.equal(r.body.notes.length,1);
