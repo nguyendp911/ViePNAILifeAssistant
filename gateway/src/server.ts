@@ -5,6 +5,8 @@ import {embeddingProvider,rebuildIndex,hybridSearch,semanticState} from './seman
 import {bumpRevision,syncSnapshot,snapshotETag} from './sync.ts';
 import {dailyBriefing} from './briefing.ts';
 import {parsePlanningOptions,previewDailyPlan} from './dailyPlanner.ts';
+import {parseWeekOptions,previewWeek} from './weeklyPlanner.ts';
+import {focusHistory,focusInsights,setFocusConsent,recordFocus} from './focusHabits.ts';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {dirname,resolve} from 'node:path';
 import {postgresEnabled,initPostgres,registerUser,loginUser,resolveSession,revokeSession,readUserState,writeUserState} from './postgres.ts';
@@ -67,7 +69,7 @@ async function aiChat(message:string){
 const server=createServer(async(req,res)=>{
   try{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
-    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.2.0',storage:postgresEnabled?'postgresql':'legacy-json'});
+    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.3.0',storage:postgresEnabled?'postgresql':'legacy-json'});
     if(postgresEnabled && req.method==='POST' && (path==='/v1/auth/register'||path==='/v1/auth/login')) {
       const input=await body(req);
       try {
@@ -125,6 +127,21 @@ const server=createServer(async(req,res)=>{
       const offset=raw===null?0:Number(raw);
       return reply(res,200,dailyBriefing(store,offset));
     }
+    if(path==='/v1/weekly-plan/preview'&&req.method==='POST') {
+      const options=parseWeekOptions(await body(req));
+      return reply(res,200,previewWeek(store,options));
+    }
+    if(path==='/v1/focus-history'&&req.method==='GET')
+      return reply(res,200,{...focusHistory(store),insights:focusInsights(store)});
+    if(path==='/v1/focus-history/consent'&&req.method==='POST') {
+      const input=await body(req);
+      const state=setFocusConsent(store,input.enabled);
+      await persist();return reply(res,200,{...state,insights:focusInsights(store)});
+    }
+    if(path==='/v1/focus-history/record'&&req.method==='POST') {
+      const state=recordFocus(store,await body(req));
+      await persist();return reply(res,201,{...state,insights:focusInsights(store)});
+    }
     if(path==='/v1/daily-plan/preview'&&req.method==='POST') {
       const options=parsePlanningOptions(await body(req));
       const now=new Date();
@@ -171,7 +188,7 @@ const server=createServer(async(req,res)=>{
       const items=await hybridSearch(kb,data.query,provider,5);
       return reply(res,200,{mode:'hybrid-vector',items});
     }
-    if(req.method==='GET'&&path==='/v1/export')return reply(res,200,{schemaVersion:1,exportedAt:new Date().toISOString(),tasks:store.tasks,memories:store.memories,notes:workflowStore.notes,profiles:personal.profiles,automations:personal.automations,workflows:workflowStore.workflows,documents:kb.documents,documentChunks:kb.chunks});
+    if(req.method==='GET'&&path==='/v1/export')return reply(res,200,{schemaVersion:1,exportedAt:new Date().toISOString(),tasks:store.tasks,memories:store.memories,notes:workflowStore.notes,profiles:personal.profiles,automations:personal.automations,workflows:workflowStore.workflows,documents:kb.documents,documentChunks:kb.chunks,focusHistory:focusHistory(store)});
     if(req.method==='POST'&&path==='/v1/workflows/preview'){const p=await body(req);return reply(res,200,previewPlan(p))}
     if(req.method==='POST'&&path==='/v1/workflows/ai-preview'){
       const input=await body(req);
