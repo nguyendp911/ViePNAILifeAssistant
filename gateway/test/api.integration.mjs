@@ -18,6 +18,13 @@ try {
  for(let i=0;i<60;i++){try{if((await req('/health')).status===200){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,100))}
  assert.ok(ready,'server did not start');
  assert.equal((await req('/v1/skills','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/briefing?offsetMinutes=420','GET',undefined,false)).status,401);
+ let briefing=await req('/v1/briefing?offsetMinutes=420');
+ assert.equal(briefing.status,200);
+ assert.equal(briefing.body.timezoneOffsetMinutes,420);
+ assert.equal(briefing.body.summary.openTasks,0);
+ assert.equal(briefing.body.approvals.total,0);
+ assert.equal((await req('/v1/briefing?offsetMinutes=900')).status,400);
  let r=await req('/v1/profiles','POST',{name:'Khách hàng',style:'lịch sự'});assert.equal(r.status,201);
  const profile=r.body.id;
  r=await req('/v1/profiles');assert.equal(r.body.items[0].id,profile);
@@ -43,11 +50,16 @@ try {
  r=await req('/v1/tasks');assert.equal(r.status,200);assert.equal(r.body.items.length,1);
  const taskId=r.body.items[0].id;
  r=await req(`/v1/tasks/${taskId}`,'PATCH',{done:true});assert.equal(r.status,200);assert.equal(r.body.done,true);
+ briefing=await req('/v1/briefing?offsetMinutes=420');
+ assert.equal(briefing.status,200);
+ assert.equal(briefing.body.summary.openTasks,0);
+ assert.equal(briefing.body.summary.completedTasks,1);
+ assert.equal(Object.hasOwn(briefing.body,'token'),false);
  r=await req('/v1/export');assert.equal(r.status,200);assert.equal(r.body.schemaVersion,1);
  assert.equal(r.body.tasks[0].done,true);assert.equal(r.body.notes.length,1);
  assert.equal(Object.hasOwn(r.body,'token'),false);
  r=await req('/v1/workflows/ai-preview','POST',{request:'Lập lịch tuần này'});assert.equal(r.status,503);
  r=await req('/v1/workflows/preview','POST',{title:'Không duyệt',memory:'Thông tin cá nhân'});
  assert.equal(r.status,400);
- console.log('API_INTEGRATION_PASS: auth, profiles, memory consent/search, automation, draft, plan preview, approval, completed task, personal export');
+ console.log('API_INTEGRATION_PASS: auth, profiles, memory consent/search, automation, draft, plan preview, approval, completed task, read-only Smart Day briefing, personal export');
 }finally{child.kill('SIGTERM');await rm(dir,{recursive:true,force:true})}
