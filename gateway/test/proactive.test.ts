@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fresh,createTask,planAction} from '../src/core.ts';
 import {createWorkflow,ensureWorkflowStore} from '../src/workflows.ts';
-import {getProactiveFeed,hideProactiveItem,resetProactiveItems} from '../src/proactive.ts';
+import {getProactiveFeed,hideProactiveItem,resetProactiveItems,queueProactiveProposal} from '../src/proactive.ts';
 
 const now=new Date('2026-11-14T03:00:00.000Z'); // 10:00 Saturday Vietnam
 const offset=420;
@@ -69,4 +69,20 @@ test('completed tasks cease to appear even while suppression is stored',()=>{
  const feed=getProactiveFeed(s,offset,now);
  assert.equal(feed.totalCount,0);
  assert.equal(feed.hiddenCount,0);
+});
+
+test('task proposals queue an approval-only note exactly once',()=>{
+ const s=fresh();const task=createTask(s,'Làm hồ sơ','2026-11-13T16:00:00Z');
+ const id='task-'+task.id;
+ const proposal=queueProactiveProposal(s,id,offset,now);
+ assert.equal(proposal.status,'awaiting_approval');
+ assert.equal(proposal.steps[0].kind,'create_note');
+ assert.equal(proposal.steps[0].status,'awaiting_approval');
+ assert.equal((s as typeof s & {notes?:unknown[]}).notes?.length,0);
+ assert.equal(queueProactiveProposal(s,id,offset,now).id,proposal.id);
+ assert.equal((s as typeof s & {workflows?:unknown[]}).workflows?.length,1);
+ assert.throws(()=>queueProactiveProposal(s,'approvals',offset,now),/no task proposal/);
+ assert.throws(()=>queueProactiveProposal(s,'task-not-real',offset,now),/no task proposal/);
+ task.done=true;
+ assert.throws(()=>queueProactiveProposal(s,id,offset,now),/no task proposal/);
 });
