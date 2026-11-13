@@ -1,1 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071126"/><stop offset=".52" stop-color="#132158"/><stop offset="1" stop-color="#2b1458"/></linearGradient><linearGradient id="orbit" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4ce0fb"/><stop offset=".5" stop-color="#918bff"/><stop offset="1" stop-color="#e4a1ff"/></linearGradient><radialGradient id="glow"><stop stop-color="#6fc8ff" stop-opacity=".30"/><stop offset="1" stop-color="#6fc8ff" stop-opacity="0"/></radialGradient><filter id="soft"><feGaussianBlur stdDeviation="11"/></filter></defs><rect width="1024" height="1024" rx="228" fill="url(#bg)"/><circle cx="520" cy="520" r="385" fill="url(#glow)"/><circle cx="510" cy="510" r="319" stroke="#9eb1ff" stroke-opacity=".12" stroke-width="3" fill="none"/><g transform="translate(512 512) rotate(-31)"><ellipse rx="298" ry="178" stroke="#51ceff" stroke-opacity=".28" stroke-width="50" filter="url(#soft)" fill="none"/><ellipse rx="298" ry="178" stroke="url(#orbit)" stroke-width="28" fill="none" stroke-linecap="round"/><ellipse rx="188" ry="300" stroke="url(#orbit)" stroke-width="24" fill="none" stroke-opacity=".92" transform="rotate(60)"/></g><path d="M512 286 C532 420 597 490 735 512 C596 532 533 601 512 738 C492 601 427 532 289 512 C428 491 493 420 512 286Z" fill="#f5faff"/><path d="M512 392 C525 470 552 500 632 512 C551 525 525 553 512 630 C499 552 472 524 392 512 C472 499 500 470 512 392Z" fill="#8cdaff" opacity=".72"/><circle cx="772" cy="286" r="21" fill="#bda7ff"/><path d="M251 711 L268 760 L318 778 L268 795 L251 844 L232 795 L185 778 L233 760Z" fill="#77dcff" opacity=".88"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+<radialGradient id="bg"><stop stop-color="#07518a"/><stop offset=".68" stop-color="#061d4e"/><stop offset="1" stop-color="#020e30"/></radialGradient>
+<linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#01baff"/><stop offset=".48" stop-color="#9cfaff"/><stop offset="1" stop-color="#00f1a8"/></linearGradient>
+<linearGradient id="v" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0a46f9"/><stop offset=".46" stop-color="#41ccff"/><stop offset="1" stop-color="#00ef91"/></linearGradient>
+<linearGradient id="word" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#00d5ff"/><stop offset="1" stop-color="#56ffa8"/></linearGradient>
+<filter id="outer"><feGaussianBlur stdDeviation="10"/></filter>
+<filter id="soft"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+<rect x="7" y="7" width="1010" height="1010" rx="206" fill="url(#bg)" stroke="#15e6ef" stroke-width="15"/>
+<rect x="20" y="20" width="984" height="984" rx="195" fill="none" stroke="#16bdff" stroke-opacity=".65" stroke-width="11" filter="url(#soft)"/>
+<path d="M510 79 826 230 Q850 246 850 280 V541 Q844 707 512 784 Q174 705 174 541 V280 Q174 246 198 230 Z" fill="#042048" stroke="#05eaff" stroke-width="24" opacity=".75" filter="url(#outer)"/>
+<path d="M510 79 826 230 Q850 246 850 280 V541 Q844 707 512 784 Q174 705 174 541 V280 Q174 246 198 230 Z" fill="#041a3f" stroke="url(#cyan)" stroke-width="21"/>
+<path d="M510 113 801 253 Q820 264 820 295 V531 Q810 669 512 748 Q209 669 204 531 V295 Q204 264 225 253 Z" fill="none" stroke="#49f7ff" stroke-opacity=".4" stroke-width="3"/>
+<!-- electric circuitry -->
+<g stroke="#00dbff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".9">
+<path d="M290 307H354L391 271H429"/><path d="M735 307H673L645 280H613"/>
+<path d="M285 501H351L389 544H434V604L460 630"/><path d="M736 520H674L635 565H584L552 608"/>
+<path d="M395 667 362 635V585"/><path d="M628 651 671 604V576"/>
+</g>
+<g fill="#89ffff"><circle cx="290" cy="307" r="8"/><circle cx="735" cy="307" r="8"/><circle cx="285" cy="501" r="8"/><circle cx="736" cy="520" r="8"/><circle cx="395" cy="667" r="8"/><circle cx="628" cy="651" r="8"/></g>
+<!-- main branded V -->
+<path d="M280 347 388 347 514 573 624 347 743 347 552 630 Q520 673 485 628 Z" fill="#00ceff" opacity=".55" filter="url(#outer)"/>
+<path d="M280 347 388 347 514 573 624 347 743 347 552 630 Q520 673 485 628 Z" fill="url(#v)" stroke="#88fcff" stroke-width="3"/>
+<path d="M301 350 378 349 517 602 503 634Z" fill="#fff" opacity=".20"/>
+<!-- elliptical orbit around V -->
+<ellipse cx="513" cy="518" rx="222" ry="50" transform="rotate(-15 513 518)" stroke="#3afcff" stroke-width="11" fill="none" opacity=".65" filter="url(#soft)"/>
+<path d="M296 576 C363 611 571 549 708 482" fill="none" stroke="url(#cyan)" stroke-width="13" stroke-linecap="round"/>
+<!-- brain + AI -->
+<path d="M460 294 C435 297 432 273 441 259 C435 237 447 219 466 219 C476 200 501 201 511 216 C524 200 547 203 556 220 C578 222 585 241 580 260 C592 277 583 299 562 299Z" fill="#073364" stroke="#8cffff" stroke-width="8"/>
+<rect x="480" y="236" width="64" height="54" rx="12" fill="#0956ad" stroke="#00e8ff" stroke-width="5"/>
+<text x="512" y="273" fill="#fff" font-family="Arial,sans-serif" font-size="29" font-weight="900" text-anchor="middle">AI</text>
+<g stroke="#bafffa" stroke-width="5" stroke-linecap="round"><path d="M512 191V177"/><path d="M482 198 471 185"/><path d="M541 198 551 185"/></g>
+<path d="M478 249 456 238M545 249 569 238M511 288V309" stroke="#39ffff" stroke-width="4" fill="none"/>
+<!-- chat, plus, calendar, heart -->
+<path d="M256 415 Q256 392 279 392 H314 Q337 392 337 415 V437 Q337 458 313 458H279L261 470V454Q256 449 256 437Z" fill="#05376c" stroke="#8fffff" stroke-width="7"/>
+<g fill="#fff"><circle cx="277" cy="427" r="5"/><circle cx="297" cy="427" r="5"/><circle cx="317" cy="427" r="5"/></g>
+<path d="M666 387V434M643 411H689" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+<rect x="696" y="419" width="79" height="80" rx="11" fill="#063d61" stroke="#70ffff" stroke-width="7"/>
+<path d="M695 440H775M715 409V433M755 409V433M713 468 728 482 757 453" stroke="#dcfffc" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M511 673C495 646 461 658 464 681 467 710 511 728 511 728S555 710 558 681C561 658 526 646 511 673Z" fill="#008d88" stroke="#4cf7ca" stroke-width="7"/>
+<path d="M480 693H494L502 679 513 708 522 691H542" stroke="white" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- horizon and wordmark -->
+<path d="M132 769 Q512 698 893 769" fill="none" stroke="#00dfff" stroke-opacity=".55" stroke-width="3"/>
+<text x="167" y="911" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="98" font-weight="900" letter-spacing="-6">ViePN</text>
+<text x="517" y="911" fill="url(#word)" font-family="Arial,Helvetica,sans-serif" font-size="92" font-weight="900" letter-spacing="-5">AI Life</text>
+<path d="M280 941H765" stroke="#17f3ff" stroke-opacity=".65" stroke-width="4"/>
+</svg>
