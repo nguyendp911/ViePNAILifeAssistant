@@ -61,7 +61,7 @@ test('context includes selected memory/doc citations with limits and treats data
  assert.ok(out.prompt.length<10000);
 });
 test('large data is bounded before sharing',()=>{
- const s=fresh();for(let i=0;i<90;i++)createTask(s,'Task '+i+' '*1+('a'.repeat(190)),null);
+ const s=fresh();for(let i=0;i<90;i++)createTask(s,'Task '+i+' '+('a'.repeat(190)),null);
  const req=parseContextRequest({question:'lập kế hoạch',consent:true,includeTasks:true,includeMemories:false,includeDocuments:false});
  const ctx=buildPersonalContext(s,req);
  assert.equal(ctx.used.tasks,8);
