@@ -20,6 +20,24 @@ try {
  assert.equal((await req('/v1/skills','GET',undefined,false)).status,401);
  assert.equal((await req('/v1/briefing?offsetMinutes=420','GET',undefined,false)).status,401);
  assert.equal((await req('/v1/daily-plan/preview','POST',{},false)).status,401);
+ assert.equal((await req('/v1/weekly-plan/preview','POST',{},false)).status,401);
+ assert.equal((await req('/v1/focus-history','GET',undefined,false)).status,401);
+ let weekly=await req('/v1/weekly-plan/preview','POST',{offsetMinutes:420,weekOffset:1});
+ assert.equal(weekly.status,200);
+ assert.equal(weekly.body.days.length,7);
+ assert.equal(weekly.body.scheduledCount,0);
+ assert.equal((await req('/v1/weekly-plan/preview','POST',{workdays:[0]})).status,400);
+ let focus=await req('/v1/focus-history');
+ assert.equal(focus.status,200);
+ assert.equal(focus.body.enabled,false);
+ assert.equal((await req('/v1/focus-history/record','POST',{minutes:25,offsetMinutes:420,hour:9})).status,400);
+ focus=await req('/v1/focus-history/consent','POST',{enabled:true});
+ assert.equal(focus.status,200);
+ focus=await req('/v1/focus-history/record','POST',{minutes:25,offsetMinutes:420,hour:9});
+ assert.equal(focus.status,201);
+ assert.equal(focus.body.insights.sessions,1);
+ assert.equal((await req('/v1/focus-history/consent','POST',{enabled:false})).body.days.length,0);
+ assert.equal((await req('/v1/focus-history')).body.insights.sessions,0);
  let daily=await req('/v1/daily-plan/preview','POST',{offsetMinutes:420,startTime:'08:00',endTime:'20:00'});
  assert.equal(daily.status,200);
  assert.equal(daily.body.calendarUsed,false);
@@ -69,6 +87,9 @@ try {
  assert.equal(briefing.body.summary.openTasks,0);
  assert.equal(briefing.body.summary.completedTasks,1);
  assert.equal(Object.hasOwn(briefing.body,'token'),false);
+ weekly=await req('/v1/weekly-plan/preview','POST',{offsetMinutes:420,weekOffset:1});
+ assert.equal(weekly.status,200);
+ assert.equal(weekly.body.scheduledCount,0); // task was just marked complete
  r=await req('/v1/export');assert.equal(r.status,200);assert.equal(r.body.schemaVersion,1);
  assert.equal(r.body.tasks[0].done,true);assert.equal(r.body.notes.length,1);
  assert.equal(Object.hasOwn(r.body,'token'),false);
