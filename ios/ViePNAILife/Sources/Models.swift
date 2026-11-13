@@ -188,3 +188,48 @@ struct DailyAutomation: Decodable, Identifiable {
     let title: String
     let nextRunAt: String
 }
+
+
+// V4.2 AI Daily Assistant. This payload is always a preview, not a scheduled action.
+struct DailyPlanPreview: Decodable {
+    struct WorkWindow: Decodable {
+        let startAt: String
+        let endAt: String
+    }
+    struct Settings: Decodable {
+        let focusMinutes: Int
+        let breakMinutes: Int
+        let maxTasks: Int
+    }
+    struct BusyTime: Decodable {
+        let startAt: String
+        let endAt: String
+    }
+    struct AIAdvice: Decodable {
+        let configured: Bool
+        let text: String
+    }
+    let generatedAt: String
+    let localDate: String
+    let timezoneOffsetMinutes: Int
+    let window: WorkWindow
+    let settings: Settings
+    let calendarUsed: Bool
+    let busyTimes: [BusyTime]
+    let slots: [DailyPlanSlot]
+    let unscheduledCount: Int
+    let unscheduledTitles: [String]
+    let notice: String
+    let ai: AIAdvice?
+}
+struct DailyPlanSlot: Decodable, Identifiable {
+    let taskId: String
+    let title: String
+    let startAt: String
+    let endAt: String
+    let estimatedMinutes: Int
+    let priority: String
+    let reason: String
+    let dueAt: String?
+    var id: String { taskId }
+}
