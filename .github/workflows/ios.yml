@@ -30,5 +30,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ViePNAILife-V4.1-unsigned
-          path: ViePNAILife-unsigned.ipa
+          path: ViePNAILife-V4.1-unsigned.ipa
           if-no-files-found: error
