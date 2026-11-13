@@ -63,6 +63,7 @@ struct DashboardView: View {
     @EnvironmentObject private var api: Gateway
     @Binding var selectedTab: LifeTab
     @State private var taskTitle = ""
+    @State private var showingSmartDay = false
     private var pendingCount: Int {
         api.actions.filter { $0.status == "awaiting_approval" }.count +
         api.workflows.filter { $0.status == "awaiting_approval" }.count +
@@ -92,6 +93,31 @@ struct DashboardView: View {
                         LifeMetric(title: "Bộ nhớ", count: api.memories.count, symbol: "brain", tint: LifeTheme.cyan)
                         LifeMetric(title: "Chờ duyệt", count: pendingCount, symbol: "hand.raised", tint: .orange)
                     }
+                    Button {
+                        showingSmartDay = true
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 14) {
+                                Image(systemName: "sun.max.fill")
+                                    .font(.title2).foregroundStyle(LifeTheme.cyan)
+                                    .frame(width: 44, height: 44)
+                                    .background(LifeTheme.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Smart Day · Bản tin hôm nay").font(.headline)
+                                    if let summary = api.dailyBriefing?.summary {
+                                        Text("\(summary.dueToday) đến hạn · \(summary.overdue) quá hạn · \(summary.pendingApprovals) chờ duyệt")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    } else {
+                                        Text("Công việc, ưu tiên và hành động cần xem")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                }
+                                Spacer(minLength: 5)
+                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
                     LifeHeading(name: "Truy cập nhanh", detail: "Một chạm để bắt đầu công việc")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         LifeShortcut(title: "Trợ lý AI", subtitle: "Trò chuyện & giọng nói", symbol: "waveform", tint: LifeTheme.accent) { selectedTab = .ai }
@@ -144,10 +170,17 @@ struct DashboardView: View {
                 .padding(.horizontal, LifeTheme.horizontal)
                 .padding(.vertical, 18)
             }
-            .refreshable { await api.refresh() }
+            .refreshable { await api.refresh(); await api.loadDailyBriefing() }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .task { await api.refresh() }
+        .sheet(isPresented: $showingSmartDay) {
+            NavigationStack { DailyBriefingView(selectedTab: $selectedTab) }
+                .environmentObject(api)
+        }
+        .task {
+            await api.refresh()
+            await api.loadDailyBriefing()
+        }
     }
     private var hero: some View {
         Button { selectedTab = .ai } label: {
