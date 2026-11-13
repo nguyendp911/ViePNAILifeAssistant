@@ -105,7 +105,8 @@ struct DailyPlannerView: View {
                                 LifeEmptyState(symbol: "calendar.badge.exclamationmark", title: "Chưa có phiên phù hợp", detail: "Thử tăng khung giờ hoặc giảm thời lượng tập trung.")
                             }
                         }
-                        ForEach(Array(plan.slots.enumerated()), id: \.element.id) { index, slot in
+                        ForEach(plan.slots.indices, id: \.self) { index in
+                            let slot = plan.slots[index]
                             LifePanel {
                                 HStack(alignment: .top, spacing: 13) {
                                     Text("\(index + 1)")
