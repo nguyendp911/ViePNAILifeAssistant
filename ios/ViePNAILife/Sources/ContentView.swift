@@ -138,6 +138,26 @@ struct DashboardView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    NavigationLink {
+                        WeeklyPlannerView()
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 14) {
+                                Image(systemName: "calendar")
+                                    .font(.title2).foregroundStyle(LifeTheme.cyan)
+                                    .frame(width: 44, height: 44)
+                                    .background(LifeTheme.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Weekly Intelligence").font(.headline)
+                                    Text("Kế hoạch tuần · Ưu tiên · Thói quen tập trung")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 5)
+                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
                     LifeHeading(name: "Truy cập nhanh", detail: "Một chạm để bắt đầu công việc")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         LifeShortcut(title: "Trợ lý AI", subtitle: "Trò chuyện & giọng nói", symbol: "waveform", tint: LifeTheme.accent) { selectedTab = .ai }
