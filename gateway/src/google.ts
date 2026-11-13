@@ -110,3 +110,30 @@ export async function calendarEvents(store:Store,persist:()=>Promise<void>) {
   const result=await googleGET(store,'calendar',url.toString(),persist);
   return {items:(result.items||[]).map((e:any)=>({id:e.id,summary:e.summary||'(Không có tiêu đề)',start:e.start?.dateTime||e.start?.date||'',end:e.end?.dateTime||e.end?.date||''}))};
 }
+
+
+/** V4.2: read busy intervals for one requested workday only.
+ * Event titles/descriptions are deliberately NOT returned to the daily planner.
+ * The caller must have explicitly selected Google Calendar inclusion.
+ */
+export async function calendarBusyForWindow(
+  store:Store,persist:()=>Promise<void>,startAt:string,endAt:string,
+):Promise<{start:string;end:string}[]> {
+  const from=Date.parse(startAt),to=Date.parse(endAt);
+  if(!Number.isFinite(from)||!Number.isFinite(to)||to<=from||to-from>24*3600_000)
+    throw new Error('invalid calendar window');
+  const url=new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+  url.searchParams.set('singleEvents','true');
+  url.searchParams.set('orderBy','startTime');
+  url.searchParams.set('maxResults','200');
+  url.searchParams.set('timeMin',new Date(from).toISOString());
+  url.searchParams.set('timeMax',new Date(to).toISOString());
+  const data=await googleGET(store,'calendar',url.toString(),persist);
+  return (Array.isArray(data.items)?data.items:[])
+    .filter((event:any)=>event?.status!=='cancelled'&&event?.transparency!=='transparent')
+    .map((event:any)=>({
+      start:String(event.start?.dateTime||event.start?.date||''),
+      end:String(event.end?.dateTime||event.end?.date||''),
+    }))
+    .filter((item:{start:string;end:string})=>Boolean(item.start&&item.end));
+}
