@@ -1,7 +1,7 @@
 import {validateDate} from './core.ts';
 
 export type ProposedStep={kind:'create_note'|'create_task'|'save_memory';payload:Record<string,unknown>};
-export interface PlanPreview{title:string;steps:ProposedStep[];requiresApproval:true;executed:false;origin:'structured_user_request'|'ai_generated'}
+export interface PlanPreview{title:string;steps:ProposedStep[];requiresApproval:true;executed:false;origin:'structured_user_request'}
 const text=(value:unknown,max:number,label:string):string=>{
   if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error('invalid '+label);
   return value.trim();
@@ -23,7 +23,7 @@ export function previewPlan(input:unknown):PlanPreview {
     steps.push({kind:'save_memory',payload:{text:text(p.memory,2000,'memory')}});
   }
   if(steps.length<1)throw new Error('at least one step is required');
-  return {title,steps,requiresApproval:true,executed:false,origin:'structured_user_request'|'ai_generated'};
+  return {title,steps,requiresApproval:true,executed:false,origin:'structured_user_request'};
 }
 
 /** Convert untrusted model output into allowlisted, preview-only operations. */
@@ -38,5 +38,5 @@ export function previewFromModel(raw:string):PlanPreview {
   if(data.memory!==undefined||data.memoryConsent!==undefined||data.command!==undefined||data.steps!==undefined)
     throw new Error('AI plan contains unsupported operations');
   const preview=previewPlan({title:data.title,note:data.note,task:data.task,dueAt:data.dueAt});
-  return {...preview,origin:'structured_user_request'|'ai_generated'};
+  return {...preview,origin:'ai_generated'};
 }
