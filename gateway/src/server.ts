@@ -5,7 +5,7 @@ import {embeddingProvider,rebuildIndex,hybridSearch,semanticState} from './seman
 import {bumpRevision,syncSnapshot,snapshotETag} from './sync.ts';
 import {dailyBriefing} from './briefing.ts';
 import {personalInsights,parseContextRequest,buildPersonalContext} from './personalInsights.ts';
-import {getProactiveFeed,hideProactiveItem,resetProactiveItems} from './proactive.ts';
+import {getProactiveFeed,hideProactiveItem,resetProactiveItems,queueProactiveProposal} from './proactive.ts';
 import {parsePlanningOptions,previewDailyPlan} from './dailyPlanner.ts';
 import {parseWeekOptions,previewWeek} from './weeklyPlanner.ts';
 import {focusHistory,focusInsights,setFocusConsent,recordFocus} from './focusHabits.ts';
@@ -127,6 +127,12 @@ const server=createServer(async(req,res)=>{
     if(path==='/v1/proactive'&&req.method==='GET') {
       const raw=new URL(req.url||'/', 'http://localhost').searchParams.get('offsetMinutes');
       return reply(res,200,getProactiveFeed(store,raw===null?0:Number(raw)));
+    }
+    if(path==='/v1/proactive/queue'&&req.method==='POST') {
+      const input=await body(req);
+      const result=queueProactiveProposal(store,input.id,input.offsetMinutes);
+      await persist();
+      return reply(res,201,result);
     }
     if(path==='/v1/proactive/snooze'&&req.method==='POST') {
       const input=await body(req);
