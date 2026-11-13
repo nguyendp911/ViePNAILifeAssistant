@@ -3,8 +3,8 @@
  * Offsets are minutes east of UTC; callers pass the device's current offset.
  */
 import type {Store,Task} from './core.ts';
-import {ensureWorkflowStore} from './workflows.ts';
-import {enhanced,getPending} from './personal.ts';
+import type {WorkflowStore} from './workflows.ts';
+import type {PersonalStore,PendingAutomation} from './personal.ts';
 
 export type PriorityKind='overdue'|'today'|'upcoming'|'undated';
 export type BriefingTask=Pick<Task,'id'|'title'|'dueAt'|'done'> & {kind:PriorityKind};
@@ -27,10 +27,10 @@ export function dailyBriefing(store:Store, offsetMinutes:number=0, now:Date=new 
   const start=Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate())-offsetMs;
   const end=start+86_400_000;
   const tomorrow=end+86_400_000;
-  const ws=ensureWorkflowStore(store),personal=enhanced(store);
+  // Do not initialize or mutate any legacy store fields while serving a GET.\n  const ws=store as Partial<WorkflowStore>;\n  const personal=store as Partial<PersonalStore> & {pendingAutomations?:PendingAutomation[]};
   const waitingActions=store.actions.filter(item=>item.status==='awaiting_approval').length;
-  const waitingWorkflows=ws.workflows.filter(item=>item.status==='awaiting_approval').length;
-  const waitingAutomations=getPending(personal).filter(item=>item.status==='awaiting_approval').length;
+  const waitingWorkflows=(ws.workflows??[]).filter(item=>item.status==='awaiting_approval').length;
+  const waitingAutomations=(personal.pendingAutomations??[]).filter(item=>item.status==='awaiting_approval').length;
   const due=(task:Task):number|null=>{
     if(!task.dueAt)return null;
     const at=Date.parse(task.dueAt);
@@ -43,10 +43,10 @@ export function dailyBriefing(store:Store, offsetMinutes:number=0, now:Date=new 
   });
   const weight:Record<PriorityKind,number>={overdue:0,today:1,upcoming:2,undated:3};
   categorized.sort((a,b)=>weight[a.kind]-weight[b.kind]||a.sortAt-b.sortAt||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
-  const soon=personal.automations
+  const next48h=(personal.automations??[])
     .filter(item=>item.enabled&&Number.isFinite(Date.parse(item.nextRunAt))&&Date.parse(item.nextRunAt)>=now.getTime()&&Date.parse(item.nextRunAt)<now.getTime()+48*3_600_000)
     .sort((a,b)=>a.nextRunAt.localeCompare(b.nextRunAt)||a.id.localeCompare(b.id))
-    .slice(0,5).map(({id,title,nextRunAt})=>({id,title,nextRunAt}));
+    .map(({id,title,nextRunAt})=>({id,title,nextRunAt}));
   return {
     generatedAt:now.toISOString(),
     localDate:local.toISOString().slice(0,10),
@@ -58,10 +58,10 @@ export function dailyBriefing(store:Store, offsetMinutes:number=0, now:Date=new 
       dueToday:categorized.filter(item=>item.kind==='today').length,
       upcoming:categorized.filter(item=>item.kind==='upcoming').length,
       pendingApprovals:waitingActions+waitingWorkflows+waitingAutomations,
-      scheduledSoon:soon.length,
+      scheduledSoon:next48h.length,
     },
     approvals:{actions:waitingActions,workflows:waitingWorkflows,automations:waitingAutomations,total:waitingActions+waitingWorkflows+waitingAutomations},
     priorities:categorized.slice(0,12).map(({id,title,dueAt,done,kind})=>({id,title,dueAt,done,kind})),
-    upcomingAutomations:soon,
+    upcomingAutomations:next48h.slice(0,5),
   };
 }
