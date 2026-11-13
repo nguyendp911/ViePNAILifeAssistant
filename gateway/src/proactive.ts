@@ -4,7 +4,7 @@
  * Suppression is user-initiated, tenant-scoped and automatically expires.
  */
 import type {Store,Task} from './core.ts';
-import {createWorkflow,type Workflow,type WorkflowStore} from './workflows.ts';
+import {createWorkflow,ensureWorkflowStore,type Workflow,type WorkflowStore} from './workflows.ts';
 import type {PersonalStore,PendingAutomation} from './personal.ts';
 
 const HOUR=3_600_000;
@@ -105,7 +105,7 @@ export function queueProactiveProposal(store:Store,id:unknown,offset:number,now=
   const item=candidates(store,offset,now).find(x=>x.id===id);
   if(!item||item.action!=='tasks')throw new Error('no task proposal available');
   const title='Đề xuất xử lý: '+item.title.slice(0,130);
-  const workflowStore=store as WorkflowStore;
+  const workflowStore=ensureWorkflowStore(store);
   const existing=(workflowStore.workflows??[]).find(w=>w.title===title&&
     (w.status==='awaiting_approval'||w.status==='in_progress'));
   if(existing)return existing; // safe and idempotent for pending proposals
