@@ -14,6 +14,27 @@ struct DailyBriefingView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     LifeHeading(name: "Tổng quan hôm nay", detail: "Dữ liệu của tài khoản hiện tại · không gửi đến AI")
                     NavigationLink {
+                        DailyPlannerView()
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 13) {
+                                Image(systemName: "calendar.badge.clock")
+                                    .font(.title2)
+                                    .foregroundStyle(LifeTheme.cyan)
+                                    .frame(width: 44, height: 44)
+                                    .background(LifeTheme.cyan.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text("Lập kế hoạch tập trung").font(.headline)
+                                    Text("Xếp giờ làm việc, tránh lịch bận và nhận gợi ý AI tùy chọn")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    NavigationLink {
                         DailyPlanView(selectedTab: $selectedTab)
                     } label: {
                         Label("Lập lịch tập trung với AI Daily Assistant", systemImage: "sparkles.rectangle.stack")
