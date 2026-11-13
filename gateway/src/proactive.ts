@@ -106,9 +106,10 @@ export function queueProactiveProposal(store:Store,id:unknown,offset:number,now=
   if(!item||item.action!=='tasks')throw new Error('no task proposal available');
   const title='Đề xuất xử lý: '+item.title.slice(0,130);
   const workflowStore=ensureWorkflowStore(store);
-  const existing=(workflowStore.workflows??[]).find(w=>w.title===title&&
+  const existing=(workflowStore.workflows??[]).find(w=>
+    (w as Workflow & {proposalSource?:string}).proposalSource===id &&
     (w.status==='awaiting_approval'||w.status==='in_progress'));
-  if(existing)return existing; // safe and idempotent for pending proposals
+  if(existing)return existing; // safe and idempotent for the exact task, not a title match
   const content=[
     'ĐÂY LÀ BẢN NHÁP CHỜ PHÊ DUYỆT. KHÔNG TỰ THỰC HIỆN.',
     'Công việc: '+item.title,
@@ -117,5 +118,7 @@ export function queueProactiveProposal(store:Store,id:unknown,offset:number,now=
     'Gợi ý: Kiểm tra tiến độ, sắp xếp thời gian phù hợp và cập nhật người có liên quan nếu cần.',
     'ViePN không gửi thông báo hay thay đổi hạn công việc.',
   ].join('\n');
-  return createWorkflow(workflowStore,title,[{kind:'create_note',payload:{title,content}}]);
+  const proposal=createWorkflow(workflowStore,title,[{kind:'create_note',payload:{title,content}}]);
+  (proposal as Workflow & {proposalSource?:string}).proposalSource=id;
+  return proposal;
 }
