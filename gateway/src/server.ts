@@ -1,9 +1,10 @@
 import {createServer, type IncomingMessage, type ServerResponse} from 'node:http';
-import {configured as googleConfigured,startOAuth,consumeOAuthState,exchangeCode,saveConnection,disconnect,connectionStatus,gmailSummaries,calendarEvents,type GoogleService} from './google.ts';
+import {configured as googleConfigured,startOAuth,consumeOAuthState,exchangeCode,saveConnection,disconnect,connectionStatus,gmailSummaries,calendarEvents,calendarBusyForWindow,type GoogleService} from './google.ts';
 import {knowledge,addDocument,deleteDocument,retrieve,evidenceAnswer,buildGroundedPrompt} from './knowledge.ts';
 import {embeddingProvider,rebuildIndex,hybridSearch,semanticState} from './semantic.ts';
 import {bumpRevision,syncSnapshot,snapshotETag} from './sync.ts';
 import {dailyBriefing} from './briefing.ts';
+import {parsePlanningOptions,previewDailyPlan} from './dailyPlanner.ts';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {dirname,resolve} from 'node:path';
 import {postgresEnabled,initPostgres,registerUser,loginUser,resolveSession,revokeSession,readUserState,writeUserState} from './postgres.ts';
@@ -66,7 +67,7 @@ async function aiChat(message:string){
 const server=createServer(async(req,res)=>{
   try{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
-    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.1.0',storage:postgresEnabled?'postgresql':'legacy-json'});
+    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.2.0',storage:postgresEnabled?'postgresql':'legacy-json'});
     if(postgresEnabled && req.method==='POST' && (path==='/v1/auth/register'||path==='/v1/auth/login')) {
       const input=await body(req);
       try {
@@ -123,6 +124,28 @@ const server=createServer(async(req,res)=>{
       const raw=new URL(req.url||'/', 'http://localhost').searchParams.get('offsetMinutes');
       const offset=raw===null?0:Number(raw);
       return reply(res,200,dailyBriefing(store,offset));
+    }
+    if(path==='/v1/daily-plan/preview'&&req.method==='POST') {
+      const options=parsePlanningOptions(await body(req));
+      const now=new Date();
+      const initial=previewDailyPlan(store,options,[],now);
+      let busy:{start:string;end:string}[]=[];
+      if(options.includeCalendar) {
+        if(!connectionStatus(store).calendar)
+          return reply(res,409,{error:'Connect Google Calendar before requesting calendar-aware planning'});
+        busy=await calendarBusyForWindow(store,persist,initial.window.startAt,initial.window.endAt);
+      }
+      const plan=previewDailyPlan(store,options,busy,now);
+      if(options.useAI) {
+        if(!AI_URL||!AI_KEY||!AI_MODEL)return reply(res,503,{error:'AI provider is not configured'});
+        // Only with the explicit useAI opt-in: a bounded plan text is sent to the
+        // configured AI provider. Calendar event TITLES are never transmitted.
+        const brief=plan.slots.map(slot=>slot.title+' | '+slot.startAt+' | '+slot.priority).join('\n');
+        const instruction='Bạn là trợ lý lập kế hoạch ViePN. Hãy đưa tối đa 3 lời khuyên ngắn về thứ tự và cách tập trung dựa trên bản nháp đã cho. Không bịa lịch, không đề nghị đã gửi email hoặc đã thực hiện hành động. Mọi thao tác phải được người dùng xác nhận. Lịch gợi ý:\n'+brief;
+        const guidance=await aiChat(instruction);
+        return reply(res,200,{...plan,ai:{configured:guidance.configured,text:guidance.reply.slice(0,2500)}});
+      }
+      return reply(res,200,{...plan,ai:null});
     }
     if(req.method==='GET'&&path==='/v1/sync') {
       const etag=snapshotETag(store);
