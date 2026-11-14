@@ -17,6 +17,10 @@ jobs:
         run: |
           mkdir -p ios/ViePNAILife/Resources/Assets.xcassets/AppIcon.appiconset
           rsvg-convert -w 1024 -h 1024 branding/ViePN-AI-Life-icon.svg > ios/ViePNAILife/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+      - name: Test native reminder policy (Swift)
+        run: |
+          swiftc -parse-as-library ios/ViePNAILife/Sources/ReminderPolicy.swift ios/tests/ReminderPolicyTests.swift -o /tmp/viepn-reminder-tests
+          /tmp/viepn-reminder-tests
       - name: Generate Xcode project
         run: cd ios && xcodegen generate
       - name: Build for iPhone
@@ -26,9 +30,9 @@ jobs:
         run: |
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/ViePNAILife.app Payload/
-          zip -qry ViePNAILife-V4.5-unsigned.ipa Payload
+          zip -qry ViePNAILife-V4.6-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: ViePNAILife-V4.5-unsigned
-          path: ViePNAILife-V4.5-unsigned.ipa
+          name: ViePNAILife-V4.6-unsigned
+          path: ViePNAILife-V4.6-unsigned.ipa
           if-no-files-found: error
