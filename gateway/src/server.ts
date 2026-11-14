@@ -13,7 +13,7 @@ import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {dirname,resolve} from 'node:path';
 import {postgresEnabled,initPostgres,registerUser,loginUser,resolveSession,revokeSession,readUserState,writeUserState} from './postgres.ts';
 import {safeUserId, parseAccountConfig, resolveAccount} from './tenancy.ts';
-import {createTask,createMemory,fresh,planAction,resolveAction,setTaskDone,type Store} from './core.ts';
+import {createTask,updateTask,deleteTask,createMemory,fresh,planAction,resolveAction,type Store} from './core.ts';
 import {previewPlan,previewFromModel} from './planner.ts';
 import {ensureWorkflowStore,createWorkflow,decideWorkflowStep,retryFailedStep} from './workflows.ts';
 import {enhanced,addProfile,searchMemory,suggestReply,SKILLS,addAutomation,queueDue,getPending,resolvePending} from './personal.ts';
@@ -71,7 +71,7 @@ async function aiChat(message:string){
 const server=createServer(async(req,res)=>{
   try{
     const path=new URL(req.url||'/', 'http://localhost').pathname;
-    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.5.0',storage:postgresEnabled?'postgresql':'legacy-json'});
+    if(path==='/health'&&req.method==='GET')return reply(res,200,{ok:true,version:'4.7.0',storage:postgresEnabled?'postgresql':'legacy-json'});
     if(postgresEnabled && req.method==='POST' && (path==='/v1/auth/register'||path==='/v1/auth/login')) {
       const input=await body(req);
       try {
@@ -235,7 +235,15 @@ const server=createServer(async(req,res)=>{
       const suggestion=await aiChat(instruction);
       return reply(res,200,previewFromModel(suggestion.reply));
     }
-    if(req.method==='PATCH'&&/^\/v1\/tasks\/[^/]+$/.test(path)){const p=await body(req);const updated=setTaskDone(store,path.split('/')[3],p.done);await persist();return reply(res,200,updated)}
+    if(req.method==='PATCH'&&/^\/v1\/tasks\/[^/]+$/.test(path)){
+      const updated=updateTask(store,path.split('/')[3],await body(req));
+      await persist();return reply(res,200,updated);
+    }
+    if(req.method==='DELETE'&&/^\/v1\/tasks\/[^/]+$/.test(path)){
+      const deleted=deleteTask(store,path.split('/')[3]);
+      if(!deleted)return reply(res,404,{error:'task not found'});
+      await persist();return reply(res,200,{deleted:true});
+    }
     if(req.method==='GET'&&path==='/v1/documents')return reply(res,200,{items:kb.documents});
     if(req.method==='POST'&&path==='/v1/documents'){
       const p=await body(req);const item=addDocument(kb,p.title,p.content);
@@ -285,7 +293,7 @@ const server=createServer(async(req,res)=>{
     }
     if(req.method==='POST'&&/^\/v1\/workflows\/[^/]+\/steps\/[^/]+\/(approve|reject)$/.test(path)){const parts=path.split('/');const item=decideWorkflowStep(workflowStore,parts[3],parts[5],parts[6]==='approve');await persist();return reply(res,200,item)}
     if(req.method==='POST'&&path==='/v1/chat'){const p=await body(req);if(typeof p.message!=='string'||!p.message.trim()||p.message.length>5000)throw new Error('invalid message');return reply(res,200,await aiChat(p.message))}
-    if(req.method==='POST'&&path==='/v1/tasks'){const p=await body(req);const item=createTask(store,p.title,p.dueAt);await persist();return reply(res,201,item)}
+    if(req.method==='POST'&&path==='/v1/tasks'){const p=await body(req);const item=createTask(store,p.title,p.dueAt,p);await persist();return reply(res,201,item)}
     if(req.method==='POST'&&path==='/v1/memories'){const p=await body(req);if(p.consent!==true)throw new Error('explicit memory consent required');const item=createMemory(store,p.text);await persist();return reply(res,201,item)}
     if(req.method==='DELETE'&&path.startsWith('/v1/memories/')){const id=path.split('/')[3];const old=store.memories.length;store.memories=store.memories.filter(x=>x.id!==id);if(store.memories.length===old)return reply(res,404,{error:'not found'});await persist();return reply(res,200,{deleted:true})}
     if(req.method==='POST'&&path==='/v1/actions/plan'){const p=await body(req);const item=planAction(store,p.kind,p.payload);await persist();return reply(res,201,item)}
