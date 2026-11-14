@@ -1,3 +1,17 @@
+# ViePN AI Life V4.8 — AI Conversation 2.0
+
+**Nâng cấp mới nhất:** hội thoại AI nhiều lượt, chọn provider/model theo cấu hình an toàn trên Gateway, đọc câu trả lời bằng giọng Việt ngay trên iPhone.
+
+- **AI Assistant 2.0:** chỉ gửi tối đa 12 lượt lịch sử chat gần nhất để trả lời tin nhắn hiện tại; không tự gửi bộ nhớ, tài liệu, công việc hoặc dữ liệu Google.
+- **Chọn model:** Gateway hỗ trợ OpenAI-compatible và Gemini native, chỉ hiện model được cấu hình. API key ở server, không đóng gói vào IPA.
+- **TTS tiếng Việt:** nút Nghe, Dừng, Sao chép từng câu trả lời; tùy chọn Tự đọc mặc định tắt.
+- **Lịch sử riêng tư:** lưu cục bộ tách theo tài khoản, xóa để bắt đầu hội thoại mới; không ghi nhật ký chat lên Gateway.
+- **API mới:** `GET /v1/ai/providers` (danh mục model không chứa khóa), `POST /v1/chat` (có `history`, `providerId`, `model`).
+- **Hạn chế:** streaming token và quản lý nhiều cuộc hội thoại riêng biệt chưa có trong V4.8; các tính năng AI thực tế cần Gateway cấu hình model và API key hợp lệ.
+- Xem [hướng dẫn V4.8 AI Conversation](docs/V4.8-AI-CONVERSATION.md). IPA được build **chưa ký** và vẫn cần ký profile Apple cho app cùng Share Extension.
+
+---
+
 # ViePN AI Life V4.7 — Task Manager 2.0
 
 **Mã nguồn iOS + Gateway đã nâng cấp.** Kiểm tra build và trạng thái ký trong GitHub Actions.
