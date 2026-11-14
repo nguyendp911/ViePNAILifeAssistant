@@ -381,14 +381,62 @@ struct DashboardView: View {
 struct ChatView: View {
     @EnvironmentObject private var api: Gateway
     @StateObject private var voice = VoiceInput()
+    @StateObject private var speech = SpeechReadout()
     @State private var message = ""
     @State private var lines: [ChatLine] = []
+    @State private var providers: [ChatModelOption] = []
+    @State private var providerId = ""
+    @State private var selectedModel = ""
+    @State private var autoSpeak = false
     @State private var busy = false
+    @State private var errorText = ""
     private let suggestions = ["Lập kế hoạch ngày hôm nay", "Tóm tắt một tài liệu", "Gợi ý việc cần ưu tiên"]
+
+    private var currentModels: [String] {
+        providers.first(where: { $0.id == providerId })?.models ?? []
+    }
     var body: some View {
         ZStack {
             LifeBackdrop()
             VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 7) {
+                    if providers.isEmpty {
+                        Label("Dùng model đã cấu hình tại Gateway", systemImage: "server.rack")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        HStack(spacing: 8) {
+                            Picker("Nhà cung cấp", selection: $providerId) {
+                                ForEach(providers) { provider in
+                                    Text(provider.name).tag(provider.id)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .disabled(busy)
+                            Picker("Model", selection: $selectedModel) {
+                                ForEach(currentModels, id: \.self) { model in
+                                    Text(model).tag(model)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .disabled(busy)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                    HStack {
+                        Label("Lịch sử chat gần nhất · Chỉ gửi khi bạn nhắn", systemImage: "lock.shield")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Spacer(minLength: 0)
+                        Toggle("Tự đọc", isOn: $autoSpeak)
+                            .labelsHidden()
+                            .tint(LifeTheme.accent)
+                            .accessibilityLabel("Tự đọc câu trả lời bằng giọng Việt")
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(.regularMaterial)
+
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 16) {
@@ -400,90 +448,231 @@ struct ChatView: View {
                                         .padding(26)
                                         .background(LifeTheme.accent.opacity(0.1), in: Circle())
                                     Text("Tôi có thể giúp gì?").font(.title2.bold())
-                                    Text("Hỏi đáp, lập kế hoạch, viết nội dung hoặc phân tích thông tin bạn chia sẻ.")
+                                    Text("Hội thoại nhiều lượt, gợi ý kế hoạch và đọc câu trả lời bằng giọng Việt. Không tự sử dụng bộ nhớ hoặc tài liệu riêng.")
                                         .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
                                     ForEach(suggestions, id: \.self) { suggestion in
                                         Button { message = suggestion } label: {
-                                            HStack { Image(systemName: "sparkle"); Text(suggestion); Spacer(); Image(systemName: "arrow.up.left") }
-                                                .font(.subheadline).padding(13)
-                                        }.buttonStyle(.bordered).tint(LifeTheme.accent)
+                                            HStack {
+                                                Image(systemName: "sparkle")
+                                                Text(suggestion)
+                                                Spacer()
+                                                Image(systemName: "arrow.up.left")
+                                            }.font(.subheadline).padding(13)
+                                        }
+                                        .buttonStyle(.bordered).tint(LifeTheme.accent)
                                     }
-                                }.frame(maxWidth: .infinity).padding(.top, 65)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 55)
                             }
                             ForEach(lines) { line in
                                 HStack(alignment: .bottom) {
-                                    if line.user { Spacer(minLength: 48) }
-                                    if !line.user { Image(systemName: "sparkles").foregroundStyle(LifeTheme.accent).padding(.bottom, 7) }
-                                    Text(line.text)
-                                        .textSelection(.enabled)
-                                        .padding(.horizontal, 15).padding(.vertical, 12)
-                                        .background(line.user ? LifeTheme.accent.opacity(0.18) : Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 18))
+                                    if line.user { Spacer(minLength: 42) }
+                                    if !line.user {
+                                        Image(systemName: "sparkles")
+                                            .foregroundStyle(LifeTheme.accent).padding(.bottom, 9)
+                                    }
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(line.text)
+                                            .textSelection(.enabled)
+                                            .padding(.horizontal, 15).padding(.vertical, 12)
+                                            .background(
+                                                line.user ? LifeTheme.accent.opacity(0.18) : Color.primary.opacity(0.055),
+                                                in: RoundedRectangle(cornerRadius: 18)
+                                            )
+                                        if !line.user {
+                                            HStack(spacing: 10) {
+                                                Button {
+                                                    speech.speak(line.text)
+                                                } label: {
+                                                    Label("Nghe", systemImage: "speaker.wave.2")
+                                                }
+                                                Button {
+                                                    UIPasteboard.general.string = line.text
+                                                } label: {
+                                                    Label("Sao chép", systemImage: "doc.on.doc")
+                                                }
+                                                if speech.speaking {
+                                                    Button {
+                                                        speech.stop()
+                                                    } label: {
+                                                        Label("Dừng", systemImage: "stop.fill")
+                                                    }
+                                                }
+                                            }
+                                            .font(.caption)
+                                            .buttonStyle(.plain)
+                                            .foregroundStyle(LifeTheme.accent)
+                                            .padding(.leading, 9)
+                                        }
+                                    }
                                     if !line.user { Spacer(minLength: 38) }
-                                }.id(line.id)
+                                }
+                                .id(line.id)
                             }
                         }
                         .padding(17)
                     }
-                    .onChange(of: lines.count) { _,_ in
-                        if let id = lines.last?.id { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(id, anchor: .bottom) } }
+                    .onChange(of: lines.count) { _, _ in
+                        if let id = lines.last?.id {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                proxy.scrollTo(id, anchor: .bottom)
+                            }
+                        }
                     }
                 }
-                if busy { ProgressView("Đang suy nghĩ...").font(.caption).padding(9) }
+
+                if busy {
+                    HStack {
+                        ProgressView()
+                        Text("Đang xử lý bằng AI...").font(.caption)
+                    }.padding(8)
+                }
+                if !errorText.isEmpty {
+                    Text(errorText)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 12)
+                }
                 HStack(alignment: .bottom, spacing: 10) {
                     TextField("Nhập yêu cầu cho AI...", text: $message, axis: .vertical)
-                        .lineLimit(1...5).padding(12)
+                        .lineLimit(1...5)
+                        .padding(12)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 17))
                     Button {
-                        if voice.listening { voice.stop(); message = voice.transcript }
-                        else { Task { await voice.start() } }
+                        if voice.listening {
+                            voice.stop()
+                            message = voice.transcript
+                        } else {
+                            Task { await voice.start() }
+                        }
                     } label: {
                         Image(systemName: voice.listening ? "stop.circle.fill" : "mic.fill")
                             .font(.title3).frame(width: 44, height: 44)
-                    }.buttonStyle(.bordered).tint(voice.listening ? .red : LifeTheme.accent)
-                        .accessibilityLabel(voice.listening ? "Dừng nhập giọng nói" : "Nhập bằng giọng nói")
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(voice.listening ? .red : LifeTheme.accent)
+                    .accessibilityLabel(voice.listening ? "Dừng nhập giọng nói" : "Nhập bằng giọng nói")
                     Button { Task { await send() } } label: {
                         Image(systemName: "arrow.up").font(.headline).frame(width: 44, height: 44)
-                    }.buttonStyle(.borderedProminent).tint(LifeTheme.accent)
-                        .disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || busy)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(LifeTheme.accent)
+                    .disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || busy)
                 }
-                .padding(.horizontal, 12).padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
                 .background(.regularMaterial)
-                if !voice.errorMessage.isEmpty { Text(voice.errorMessage).font(.caption).foregroundStyle(.red).padding(.bottom, 5) }
+                if !voice.errorMessage.isEmpty {
+                    Text(voice.errorMessage).font(.caption).foregroundStyle(.red).padding(.bottom, 5)
+                }
             }
         }
-        .navigationTitle("AI Assistant")
+        .navigationTitle("AI Assistant 2.0")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                do { try ChatHistory.clear(token: api.token, baseURL: api.baseURL); lines.removeAll() }
-                catch { api.status = error.localizedDescription }
-            } label: { Image(systemName: "square.and.pencil") }
-                .accessibilityLabel("Tạo cuộc hội thoại mới")
-        }}
-        .onAppear { lines = ChatHistory.load(token: api.token, baseURL: api.baseURL) }
-        .onChange(of: api.token) { _,_ in lines = ChatHistory.load(token: api.token, baseURL: api.baseURL) }
-        .onChange(of: api.baseURL) { _,_ in lines = ChatHistory.load(token: api.token, baseURL: api.baseURL) }
-        .onChange(of: voice.transcript) { _, text in if voice.listening { message = text } }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    do {
+                        try ChatHistory.clear(token: api.token, baseURL: api.baseURL)
+                        lines.removeAll()
+                        speech.stop()
+                        errorText = ""
+                    } catch {
+                        errorText = error.localizedDescription
+                    }
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                }
+                .disabled(busy)
+                .accessibilityLabel("Bắt đầu hội thoại mới và xóa lịch sử cũ trên iPhone")
+            }
+        }
+        .onAppear {
+            lines = ChatHistory.load(token: api.token, baseURL: api.baseURL)
+            Task { await loadProviders() }
+        }
+        .onChange(of: api.token) { _, _ in
+            speech.stop()
+            lines = ChatHistory.load(token: api.token, baseURL: api.baseURL)
+            Task { await loadProviders() }
+        }
+        .onChange(of: api.baseURL) { _, _ in
+            speech.stop()
+            lines = ChatHistory.load(token: api.token, baseURL: api.baseURL)
+            Task { await loadProviders() }
+        }
+        .onChange(of: providerId) { _, selected in
+            if let chosen = providers.first(where: { $0.id == selected }),
+               !chosen.models.contains(selectedModel) {
+                selectedModel = chosen.defaultModel
+            }
+        }
+        .onChange(of: voice.transcript) { _, text in
+            if voice.listening { message = text }
+        }
+        .onDisappear { speech.stop(); voice.stop() }
     }
+
+    private func loadProviders() async {
+        let currentToken = api.token
+        let currentURL = api.baseURL
+        do {
+            let result = try await api.availableAIProviders()
+            guard api.token == currentToken && api.baseURL == currentURL else { return }
+            providers = result.items
+            if let current = result.items.first(where: { $0.id == providerId }) ?? result.items.first {
+                providerId = current.id
+                if !current.models.contains(selectedModel) { selectedModel = current.defaultModel }
+            } else {
+                providerId = ""
+                selectedModel = ""
+            }
+        } catch {
+            // Remain compatible with Gateway versions predating the model catalog.
+            guard api.token == currentToken && api.baseURL == currentURL else { return }
+            providers = []
+            providerId = ""
+            selectedModel = ""
+        }
+    }
+
     private func send() async {
         let text = message.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        guard !busy, !text.isEmpty else { return }
         let sessionToken = api.token
         let sessionURL = api.baseURL
-        message = ""; lines.append(ChatLine(user: true, text: text)); persistChat(); busy = true
+        let previousLines = lines
+        let history = ChatHistory.recentContext(previousLines)
+        let chosenProvider = providerId.isEmpty ? nil : providerId
+        let chosenModel = selectedModel.isEmpty ? nil : selectedModel
+        message = ""
+        errorText = ""
+        lines.append(ChatLine(user: true, text: text))
+        busy = true
         defer { busy = false }
         do {
-            let response = try await api.chat(text)
+            let answer = try await api.chat(
+                text, history: history, providerId: chosenProvider, model: chosenModel
+            )
             guard sessionToken == api.token && sessionURL == api.baseURL else { return }
-            lines.append(ChatLine(user: false, text: response.reply))
+            lines.append(ChatLine(user: false, text: answer.reply))
+            persistChat()
+            if autoSpeak { speech.speak(answer.reply) }
         } catch {
             guard sessionToken == api.token && sessionURL == api.baseURL else { return }
-            lines.append(ChatLine(user: false, text: "Không thể kết nối: " + error.localizedDescription))
+            lines = previousLines
+            message = text
+            errorText = "Không gửi được tin nhắn: " + error.localizedDescription
         }
-        persistChat()
     }
+
     private func persistChat() {
-        do { try ChatHistory.save(lines, token: api.token, baseURL: api.baseURL) } catch { api.status = "Không lưu được lịch sử: " + error.localizedDescription }
+        do {
+            try ChatHistory.save(lines, token: api.token, baseURL: api.baseURL)
+        } catch {
+            errorText = "Không lưu được lịch sử chat: " + error.localizedDescription
+        }
     }
 }
 struct ActionsView:View {
