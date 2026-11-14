@@ -3,6 +3,7 @@
  * Offsets are minutes east of UTC; callers pass the device's current offset.
  */
 import type {Store,Task} from './core.ts';
+import {taskPriorityRank} from './core.ts';
 import type {WorkflowStore} from './workflows.ts';
 import type {PersonalStore,PendingAutomation} from './personal.ts';
 
@@ -44,7 +45,7 @@ export function dailyBriefing(store:Store, offsetMinutes:number=0, now:Date=new 
     return {...task,kind,sortAt:at??Number.MAX_SAFE_INTEGER};
   });
   const weight:Record<PriorityKind,number>={overdue:0,today:1,upcoming:2,undated:3};
-  categorized.sort((a,b)=>weight[a.kind]-weight[b.kind]||a.sortAt-b.sortAt||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
+  categorized.sort((a,b)=>weight[a.kind]-weight[b.kind]||taskPriorityRank(a)-taskPriorityRank(b)||a.sortAt-b.sortAt||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
   const next48h=(personal.automations??[])
     .filter(item=>item.enabled&&Number.isFinite(Date.parse(item.nextRunAt))&&Date.parse(item.nextRunAt)>=now.getTime()&&Date.parse(item.nextRunAt)<now.getTime()+48*3_600_000)
     .sort((a,b)=>a.nextRunAt.localeCompare(b.nextRunAt)||a.id.localeCompare(b.id))
