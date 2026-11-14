@@ -147,5 +147,36 @@ try {
  r=await req('/v1/workflows/ai-preview','POST',{request:'Lập lịch tuần này'});assert.equal(r.status,503);
  r=await req('/v1/workflows/preview','POST',{title:'Không duyệt',memory:'Thông tin cá nhân'});
  assert.equal(r.status,400);
+ // V4.7 task manager: authenticated CRUD, input validation and recurrence.
+ assert.equal((await req('/v1/tasks','POST',{title:'Private'},false)).status,401);
+ let managed=await req('/v1/tasks','POST',{
+  title:'Báo cáo tuần',dueAt:'2026-11-16T09:00:00Z',
+  priority:'urgent',labels:['Lớp 7','Chủ nhiệm'],recurrence:'weekly',
+  subtasks:[{title:'Soạn biểu mẫu',done:false},{title:'Kiểm tra',done:false}]
+ });
+ assert.equal(managed.status,201);
+ assert.equal(managed.body.priority,'urgent');
+ assert.equal(managed.body.subtasks.length,2);
+ const managedId=managed.body.id;
+ assert.equal((await req('/v1/tasks/'+managedId,'PATCH',{done:true})).status,400);
+ assert.equal((await req('/v1/tasks/'+managedId,'PATCH',{labels:['a','A']})).status,400);
+ assert.equal((await req('/v1/tasks/'+managedId,'PATCH',{createdAt:'2022-01-01'})).status,400);
+ const originalItems=(await req('/v1/tasks')).body.items.length;
+ managed=await req('/v1/tasks/'+managedId,'PATCH',{
+   title:'Báo cáo lớp',subtasks:managed.body.subtasks.map(x=>({...x,done:true}))
+ });
+ assert.equal(managed.status,200);
+ assert.equal(managed.body.title,'Báo cáo lớp');
+ assert.equal((await req('/v1/tasks/'+managedId,'PATCH',{done:true})).status,200);
+ assert.equal((await req('/v1/tasks')).body.items.length,originalItems+1);
+ assert.equal((await req('/v1/tasks/'+managedId,'PATCH',{done:true})).status,200);
+ assert.equal((await req('/v1/tasks')).body.items.length,originalItems+1);
+ const recurrenceItem=(await req('/v1/tasks')).body.items.find(x=>x.seriesId===managedId);
+ assert.ok(recurrenceItem && recurrenceItem.done===false);
+ assert.equal(recurrenceItem.subtasks[0].done,false);
+ assert.equal((await req('/v1/tasks/'+managedId,'DELETE',undefined,false)).status,401);
+ assert.equal((await req('/v1/tasks/'+managedId,'DELETE')).status,200);
+ assert.equal((await req('/v1/tasks/'+managedId,'DELETE')).status,404);
+ assert.equal((await req('/v1/tasks/'+recurrenceItem.id,'DELETE')).status,200);
  console.log('API_INTEGRATION_PASS: auth, profiles, memory consent/search, automation, draft, plan preview, approval, completed task, read-only Smart Day briefing, V4.2 daily-plan preview, personal export');
 }finally{child.kill('SIGTERM');await rm(dir,{recursive:true,force:true})}
