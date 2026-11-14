@@ -3,7 +3,7 @@ export type ActionStatus='draft'|'awaiting_approval'|'completed'|'rejected';
 export type TaskPriority='low'|'normal'|'high'|'urgent';
 export type TaskRecurrence='none'|'daily'|'weekly'|'monthly';
 export interface Subtask {id:string;title:string;done:boolean}
-export interface Task {id:string;title:string;dueAt:string|null;done:boolean;createdAt:string;priority?:TaskPriority;labels?:string[];subtasks?:Subtask[];recurrence?:TaskRecurrence;recurrenceDay?:number;seriesId?:string}
+export interface Task {id:string;title:string;dueAt:string|null;done:boolean;createdAt:string;priority?:TaskPriority;labels?:string[];subtasks?:Subtask[];recurrence?:TaskRecurrence;recurrenceDay?:number;seriesId?:string;nextOccurrenceId?:string}
 export interface Memory {id:string;text:string;createdAt:string}
 export interface Action {id:string;kind:'create_task'|'save_memory';payload:Record<string,unknown>;status:ActionStatus;createdAt:string}
 export interface Store {tasks:Task[];memories:Memory[];actions:Action[]}
@@ -98,15 +98,19 @@ export function updateTask(store:Store,id:string,patch:unknown,at:Date=new Date(
   if(!task)throw Error('task not found');
   const normalized=details(patch,task);
   if(!Number.isFinite(at.getTime()))throw Error('invalid update time');
-  const generate=!task.done&&normalized.done&&normalized.recurrence!=='none';
+  // One occurrence must never generate two children, even if reopened and re-completed.
+  const generate=!task.done&&normalized.done&&normalized.recurrence!=='none'&&!task.nextOccurrenceId;
+  let spawnedId:string|undefined;
   if(generate){
     const next:Task={...task,...normalized,id:randomUUID(),createdAt:now(),done:false,
       dueAt:nextOccurrence({...task,...normalized},at),
       subtasks:normalized.subtasks.map(x=>({id:randomUUID(),title:x.title,done:false})),
-      seriesId:task.seriesId??task.id};
+      seriesId:task.seriesId??task.id,nextOccurrenceId:undefined};
     store.tasks.push(next);
+    spawnedId=next.id;
   }
   Object.assign(task,normalized);
+  if(spawnedId)task.nextOccurrenceId=spawnedId;
   return task;
 }
 export function deleteTask(store:Store,id:string):boolean {
