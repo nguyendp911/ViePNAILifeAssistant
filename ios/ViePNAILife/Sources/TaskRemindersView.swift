@@ -83,6 +83,14 @@ struct TaskRemindersView: View {
                             .tint(LifeTheme.accent)
                             Text("Chỉ nhắc công việc chưa hoàn thành có thời hạn hợp lệ trong tương lai. Tối đa 48 thông báo chờ, ưu tiên việc gần hạn nhất.")
                                 .font(.caption).foregroundStyle(.secondary)
+                            Button {
+                                Task { await savePreferences() }
+                            } label: {
+                                Label("Lưu tùy chọn nhắc", systemImage: "checkmark.circle")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(busy)
                         }
                     }
                     LifePanel {
@@ -157,22 +165,6 @@ struct TaskRemindersView: View {
             await reminders.refreshPermissionStatus()
             if reminders.enabled { await sync() }
         }
-        .onChange(of: lead) { _, value in
-            Task {
-                await reminders.setPreferences(
-                    leadMinutes: value, showTaskTitle: showNames,
-                    tasks: api.tasks, token: api.token, baseURL: api.baseURL
-                )
-            }
-        }
-        .onChange(of: showNames) { _, value in
-            Task {
-                await reminders.setPreferences(
-                    leadMinutes: lead, showTaskTitle: value,
-                    tasks: api.tasks, token: api.token, baseURL: api.baseURL
-                )
-            }
-        }
         .confirmationDialog(
             "Tắt thông báo và xóa toàn bộ lịch nhắc công việc trên iPhone?",
             isPresented: $askToDisable,
@@ -184,6 +176,17 @@ struct TaskRemindersView: View {
         } message: {
             Text("Không xóa công việc trên Gateway; chỉ hủy các thông báo của ViePN trên thiết bị.")
         }
+    }
+
+    private func savePreferences() async {
+        guard !busy else { return }
+        busy = true
+        defer { busy = false }
+        await reminders.setPreferences(
+            leadMinutes: lead, showTaskTitle: showNames,
+            tasks: api.tasks, token: api.token, baseURL: api.baseURL
+        )
+        errorText = ""
     }
 
     private func sync() async {
@@ -209,6 +212,10 @@ struct TaskRemindersView: View {
             return
         }
         errorText = ""
+        await reminders.setPreferences(
+            leadMinutes: lead, showTaskTitle: showNames,
+            tasks: api.tasks, token: api.token, baseURL: api.baseURL
+        )
         await reminders.enable(token: api.token, baseURL: api.baseURL, tasks: api.tasks)
     }
 }
