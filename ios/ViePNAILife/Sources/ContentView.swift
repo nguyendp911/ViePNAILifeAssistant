@@ -5,11 +5,12 @@ import UniformTypeIdentifiers
 @main struct ViePNAILifeApp: App {
     @StateObject private var gateway = Gateway()
     @StateObject private var privacy = PrivacyLock()
+    @StateObject private var reminders = TaskReminderManager()
     var body: some Scene {
         WindowGroup {
             Group {
                 if privacy.unlocked {
-                    ContentView().environmentObject(gateway).environmentObject(privacy)
+                    ContentView().environmentObject(gateway).environmentObject(privacy).environmentObject(reminders)
                 } else {
                     ZStack {
                         LifeBackdrop()
@@ -34,6 +35,7 @@ enum LifeTab: Hashable { case home, ai, actions, library, profile }
 
 struct ContentView: View {
     @EnvironmentObject private var api: Gateway
+    @EnvironmentObject private var reminders: TaskReminderManager
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var sync = SyncCoordinator()
     @State private var tab: LifeTab = .home
@@ -51,11 +53,35 @@ struct ContentView: View {
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }.tag(LifeTab.profile)
         }
         .tint(LifeTheme.accent)
-        .task { await sync.refreshIfNeeded(gateway: api) }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await sync.refreshIfNeeded(gateway: api) } }
+        .task {
+            await reminders.ensureAccount(token: api.token, baseURL: api.baseURL)
+            await sync.refreshIfNeeded(gateway: api)
+            if api.status.hasPrefix("Đã nhận bản dữ liệu") {
+                await reminders.reschedule(tasks: api.tasks, token: api.token, baseURL: api.baseURL)
+            }
         }
-        .onChange(of: api.token) { _, _ in sync.reset() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task {
+                    await sync.refreshIfNeeded(gateway: api)
+                    if api.status.hasPrefix("Đã nhận bản dữ liệu") {
+                        await reminders.reschedule(tasks: api.tasks, token: api.token, baseURL: api.baseURL)
+                    }
+                }
+            }
+        }
+        .onChange(of: api.token) { _, _ in
+            sync.reset()
+            Task { await reminders.ensureAccount(token: api.token, baseURL: api.baseURL) }
+        }
+        .onChange(of: api.baseURL) { _, _ in
+            sync.reset()
+            Task { await reminders.ensureAccount(token: api.token, baseURL: api.baseURL) }
+        }
+        .onChange(of: api.tasks.map { $0.id + "|" + ($0.dueAt ?? "") + "|" + String($0.done) }) { _, _ in
+            guard api.status == "Đã đồng bộ." || api.status.hasPrefix("Đã nhận bản dữ liệu") else { return }
+            Task { await reminders.reschedule(tasks: api.tasks, token: api.token, baseURL: api.baseURL) }
+        }
     }
 }
 
@@ -190,6 +216,26 @@ struct DashboardView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Proactive Assistant").font(.headline)
                                     Text("Phát hiện việc cần chú ý · Tạm ẩn · Chuyển sang duyệt")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    NavigationLink {
+                        TaskRemindersView()
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 14) {
+                                Image(systemName: "bell.badge")
+                                    .font(.title2).foregroundStyle(LifeTheme.cyan)
+                                    .frame(width: 44, height: 44)
+                                    .background(LifeTheme.cyan.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Smart Reminders").font(.headline)
+                                    Text("Nhắc việc đúng hạn trên iPhone · Tự chọn thời điểm và quyền riêng tư")
                                         .font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer(minLength: 4)
