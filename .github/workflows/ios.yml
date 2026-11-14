@@ -30,9 +30,9 @@ jobs:
         run: |
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/ViePNAILife.app Payload/
-          zip -qry ViePNAILife-V4.7-unsigned.ipa Payload
+          zip -qry ViePNAILife-V4.8-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: ViePNAILife-V4.7-unsigned
-          path: ViePNAILife-V4.7-unsigned.ipa
+          name: ViePNAILife-V4.8-unsigned
+          path: ViePNAILife-V4.8-unsigned.ipa
           if-no-files-found: error
