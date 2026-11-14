@@ -1,6 +1,4 @@
 import SwiftUI
-import UserNotifications
-import AppIntents
 
 struct PersonalIntelligenceView: View {
     @EnvironmentObject var api:Gateway
@@ -77,31 +75,3 @@ struct SkillsAutomationView:View {
         }.navigationTitle("Skills & Automation").task{await api.refresh()}
     }
 }
-@MainActor enum ReminderScheduler {
-    static func schedule(title:String,at date:Date) async throws {
-        let center=UNUserNotificationCenter.current()
-        let granted=try await center.requestAuthorization(options:[.alert,.sound,.badge])
-        guard granted else {throw APIError.text("Chưa cấp quyền thông báo")}
-        guard date > Date() else {throw APIError.text("Thời gian phải ở tương lai")}
-        let content=UNMutableNotificationContent();content.title="ViePN AI Life";content.body=title;content.sound = .default
-        let components=Calendar.current.dateComponents([.year,.month,.day,.hour,.minute],from:date)
-        let request=UNNotificationRequest(identifier:UUID().uuidString,content:content,trigger:UNCalendarNotificationTrigger(dateMatching:components,repeats:false))
-        try await center.add(request)
-    }
-}
-struct LocalReminderView:View {
-    @State private var title=""
-    @State private var date=Date().addingTimeInterval(3600)
-    @State private var status=""
-    var body:some View {
-        Form {
-            Section("Nhắc việc trên iPhone") {
-                TextField("Nội dung nhắc",text:$title)
-                DatePicker("Thời gian",selection:$date,in:Date()...,displayedComponents:[.date,.hourAndMinute])
-                Button("Lưu thông báo") {Task{do{try await ReminderScheduler.schedule(title:title,at:date);status="Đã đăng ký nhắc việc trên thiết bị"}catch{status=error.localizedDescription}}}.disabled(title.isEmpty)
-                Text(status).font(.footnote).foregroundStyle(.secondary)
-            }
-        }.navigationTitle("Nhắc việc")
-    }
-}
-
