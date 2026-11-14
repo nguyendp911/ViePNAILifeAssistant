@@ -9,6 +9,7 @@ struct TaskRemindersView: View {
     @State private var showNames = false
     @State private var busy = false
     @State private var askToDisable = false
+    @State private var askToClearLegacy = false
     @State private var errorText = ""
 
     var body: some View {
@@ -138,6 +139,20 @@ struct TaskRemindersView: View {
                             .disabled(busy || !reminders.enabled)
                         }
                     }
+                    if reminders.legacyPendingCount > 0 {
+                        LifePanel {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Label("Lịch nhắc của bản cũ", systemImage: "arrow.triangle.2.circlepath")
+                                    .font(.headline)
+                                Text("Tìm thấy \(reminders.legacyPendingCount) lịch nhắc dạng cũ. Chúng không thuộc trình quản lý mới; bạn có thể xóa bằng xác nhận riêng.")
+                                    .font(.subheadline).foregroundStyle(.secondary)
+                                Button("Xóa lịch nhắc kiểu cũ", role: .destructive) {
+                                    askToClearLegacy = true
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                    }
                     if !reminders.message.isEmpty {
                         LifePanel {
                             Label(reminders.message, systemImage: "info.circle")
@@ -163,7 +178,15 @@ struct TaskRemindersView: View {
             lead = reminders.leadMinutes
             showNames = reminders.showTaskTitle
             await reminders.refreshPermissionStatus()
+            await reminders.inspectLegacyReminders()
             if reminders.enabled { await sync() }
+        }
+        .confirmationDialog("Xóa lịch nhắc tạo từ phiên bản cũ?", isPresented: $askToClearLegacy) {
+            Button("Xóa lịch nhắc cũ", role: .destructive) {
+                Task { await reminders.clearLegacyRemindersAfterConfirmation() }
+            }
+        } message: {
+            Text("Chỉ xóa các thông báo dùng mã UUID của trình nhắc việc cũ. Không xóa công việc hay lịch Smart Reminders hiện tại.")
         }
         .confirmationDialog(
             "Tắt thông báo và xóa toàn bộ lịch nhắc công việc trên iPhone?",
