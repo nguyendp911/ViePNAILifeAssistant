@@ -39,6 +39,10 @@ test('daily and weekly recurrence advances to next future due, once per completi
  const daily=createTask(s,'Daily','2026-11-10T08:00:00Z',{recurrence:'daily',priority:'urgent',labels:['Personal']});
  updateTask(s,daily.id,{done:true},now);
  assert.equal(s.tasks.length,2);
+ updateTask(s,daily.id,{done:false},now);
+ updateTask(s,daily.id,{done:true},now);
+ assert.equal(s.tasks.length,2); // no duplicate after reopen and complete
+
  const next=s.tasks[1];
  assert.equal(next.dueAt,'2026-11-14T08:00:00.000Z');
  assert.equal(next.done,false);
