@@ -1,5 +1,21 @@
 import Foundation
-struct ChatReply: Codable { let reply: String; let configured: Bool }
+struct ChatReply: Codable {
+    let reply: String
+    let configured: Bool
+    let provider: String?
+    let model: String?
+}
+struct ChatModelOption: Codable, Identifiable {
+    let id: String
+    let name: String
+    let kind: String
+    let models: [String]
+    let defaultModel: String
+}
+struct ChatProvidersResponse: Codable {
+    let items: [ChatModelOption]
+    let configured: Bool
+}
 struct TaskSubitem: Codable, Identifiable {
     let id: String
     let title: String
