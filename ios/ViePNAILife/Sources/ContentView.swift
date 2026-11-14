@@ -642,7 +642,7 @@ struct SettingsView:View {
             Section("Tiện ích mở rộng") {
                 NavigationLink("Cá nhân hóa và bộ nhớ") {PersonalIntelligenceView()}
                 NavigationLink("Skills & Automation") {SkillsAutomationView()}
-                NavigationLink("Nhắc việc trên iPhone") {LocalReminderView()}
+                NavigationLink("Smart Reminders – iPhone") {TaskRemindersView()}
             }
             Section("Xuất dữ liệu cá nhân") {
                 Text("Tạo bản sao JSON gồm công việc, bộ nhớ, ghi chú, hồ sơ và quy trình. Không bao gồm token hoặc API key.")
