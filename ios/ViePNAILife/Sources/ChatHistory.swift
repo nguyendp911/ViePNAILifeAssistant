@@ -27,6 +27,19 @@ enum ChatHistory {
         var mutableURL = url
         try mutableURL.setResourceValues(values)
     }
+    /// Enforce both server-side context quotas on-device. Only chat turns, never notes/memory/docs.
+    static func recentContext(_ messages: [ChatLine]) -> [ChatLine] {
+        var selected: [ChatLine] = []
+        var total = 0
+        for line in messages.reversed() {
+            let trimmed = String(line.text.prefix(3000))
+            guard !trimmed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+            if selected.count >= 12 || total + trimmed.count > 12000 { break }
+            selected.append(ChatLine(id: line.id, user: line.user, text: trimmed))
+            total += trimmed.count
+        }
+        return selected.reversed()
+    }
     static func clear(token: String, baseURL: String) throws {
         let url = try file(token: token, baseURL: baseURL)
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
