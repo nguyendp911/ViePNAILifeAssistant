@@ -8,6 +8,11 @@ export interface Memory {id:string;text:string;createdAt:string}
 export interface Action {id:string;kind:'create_task'|'save_memory';payload:Record<string,unknown>;status:ActionStatus;createdAt:string}
 export interface Store {tasks:Task[];memories:Memory[];actions:Action[]}
 export const fresh=():Store=>({tasks:[],memories:[],actions:[]});
+/** Rank explicit task priority within each deadline category (older tasks default to normal). */
+export function taskPriorityRank(task:Pick<Task,'priority'>):number {
+  return task.priority==='urgent'?0:task.priority==='high'?1:task.priority==='low'?3:2;
+}
+
 const now=()=>new Date().toISOString();
 export function validateDate(value:unknown):string|null {
   if(value===null || value===undefined || value==='')return null;
