@@ -151,8 +151,8 @@ struct ProfileHubView: View {
                     NavigationLink { GoogleConnectionsView() } label: {
                         LifeShortcutRow(title: "Connected Services", detail: "Gmail & Google Calendar với quyền chỉ đọc", icon: "link.circle")
                     }.buttonStyle(.plain)
-                    NavigationLink { LocalReminderView() } label: {
-                        LifeShortcutRow(title: "Thông báo & Lịch nhắc", detail: "Nhắc việc trực tiếp trên iPhone", icon: "bell.badge")
+                    NavigationLink { TaskRemindersView() } label: {
+                        LifeShortcutRow(title: "Smart Reminders", detail: "Tất cả nhắc việc trên iPhone", icon: "bell.badge")
                     }.buttonStyle(.plain)
                     LifePanel {
                         VStack(alignment: .leading, spacing: 9) {
