@@ -3,6 +3,7 @@
  * Preview ONLY: never mutates tasks, creates events, submits a workflow or contacts AI.
  */
 import type {Store,Task} from './core.ts';
+import {taskPriorityRank} from './core.ts';
 
 export interface PlanningOptions {
   offsetMinutes:number;
@@ -124,7 +125,7 @@ export function previewDailyPlan(
   const windowEnd=timeFromLocal(local.start,options.endTime);
   const busy=mergedBusy(calendarBusy,windowStart,windowEnd,options.offsetMinutes);
   const sorted=store.tasks.filter(t=>!t.done).map(task=>({task,importance:importance(task,local.start)}))
-    .sort((a,b)=>a.importance.rank-b.importance.rank||a.importance.at-b.importance.at||
+    .sort((a,b)=>a.importance.rank-b.importance.rank||taskPriorityRank(a.task)-taskPriorityRank(b.task)||a.importance.at-b.importance.at||
       a.task.createdAt.localeCompare(b.task.createdAt)||a.task.id.localeCompare(b.task.id));
   const slots:DailyPlanSlot[]=[];
   const slotLength=options.focusMinutes*MINUTE;
