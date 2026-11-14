@@ -1,3 +1,16 @@
+# ViePN AI Life V4.6 — Smart Reminders
+
+**Mã nguồn SwiftUI đã cập nhật; CI macOS kiểm thử bộ lọc nhắc việc và build iOS IPA chưa ký.**
+
+- **Home → Smart Reminders:** thông báo hạn công việc cục bộ trên iPhone, có thể xuất hiện ngay cả khi ứng dụng đã đóng.
+- **Quyền riêng tư:** mặc định tắt, chỉ xin quyền khi người dùng bấm bật; mặc định ẩn tên công việc trong thông báo.
+- **Tùy chỉnh:** đúng hạn, trước 5/15/60 phút hoặc 1 ngày; tối đa 48 thông báo gần hạn nhất.
+- **Đồng bộ có kiểm soát:** chỉ điều chỉnh theo dữ liệu Gateway đã đồng bộ thành công; đăng xuất/đổi tài khoản hoặc tắt tính năng sẽ hủy các lịch nhắc của ViePN.
+- Không có push server, background AI, Google Calendar write hoặc quyền tự tạo công việc. Chi tiết: [V4.6 Smart Reminders](docs/V4.6-SMART-REMINDERS.md).
+- IPA chưa ký; ký miễn phí 7 ngày vẫn phụ thuộc Apple App ID/profile phù hợp cho app và Share Extension.
+
+---
+
 # ViePN AI Life V4.5 — Proactive Assistant
 
 **Đã thêm mã nguồn Gateway + giao diện SwiftUI.** Build iOS qua GitHub Actions tạo IPA **chưa ký**.
