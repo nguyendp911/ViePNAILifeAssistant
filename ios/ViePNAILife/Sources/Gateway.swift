@@ -355,7 +355,26 @@ import Foundation
             dailyBriefingStatus = error.localizedDescription
         }
     }
-    func chat(_ message:String) async throws -> ChatReply { try await call("/v1/chat",method:"POST",body:["message":message]) }
+    func availableAIProviders() async throws -> ChatProvidersResponse {
+        try await call("/v1/ai/providers")
+    }
+    func chat(
+        _ message: String,
+        history: [ChatLine] = [],
+        providerId: String? = nil,
+        model: String? = nil
+    ) async throws -> ChatReply {
+        // Do not forward private memories, tasks or documents implicitly.
+        // The latest 12 local chat turns are sent only to answer this specific message.
+        let safeHistory = history.suffix(12).map { line -> [String: String] in
+            ["role": line.user ? "user" : "assistant",
+             "content": String(line.text.prefix(3000))]
+        }
+        var payload: [String: Any] = ["message": message, "history": safeHistory]
+        if let providerId, !providerId.isEmpty { payload["providerId"] = providerId }
+        if let model, !model.isEmpty { payload["model"] = model }
+        return try await call("/v1/chat", method: "POST", body: payload)
+    }
     func refresh() async {
         do {
             let t:Items<TaskItem> = try await call("/v1/tasks")
