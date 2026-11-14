@@ -2,6 +2,7 @@
  * AI context is constructed only when the user selects explicit scopes.
  */
 import type {Store,Task,Memory} from './core.ts';
+import {taskPriorityRank} from './core.ts';
 import type {KnowledgeState} from './knowledge.ts';
 import {retrieve} from './knowledge.ts';
 import {focusHistory,focusInsights} from './focusHabits.ts';
@@ -39,7 +40,7 @@ export function personalInsights(store:Store,offsetMinutes:number,now=new Date()
     return {rank:3,reason:'Hạn sau 7 ngày',urgency:'later' as const,at};
   };
   const candidate=pending.map(task=>({task,priority:score(task)}))
-    .sort((a,b)=>a.priority.rank-b.priority.rank||a.priority.at-b.priority.at||
+    .sort((a,b)=>a.priority.rank-b.priority.rank||taskPriorityRank(a.task)-taskPriorityRank(b.task)||a.priority.at-b.priority.at||
       a.task.createdAt.localeCompare(b.task.createdAt)||a.task.id.localeCompare(b.task.id));
   const focus=focusInsights(store);
   const data=focusHistory(store);
