@@ -16,7 +16,7 @@ export function taskPriorityRank(task:Pick<Task,'priority'>):number {
 const now=()=>new Date().toISOString();
 export function validateDate(value:unknown):string|null {
   if(value===null || value===undefined || value==='')return null;
-  if(typeof value!=='string'||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/.test(value)||Number.isNaN(Date.parse(value)))throw new Error('dueAt must be ISO UTC or null');
+  if(typeof value!=='string'||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/.test(value)||Number.isNaN(Date.parse(value))||new Date(value).toISOString().slice(0,19)!==value.slice(0,19))throw new Error('dueAt must be a valid ISO UTC timestamp or null');
   return value;
 }
 const priorityValues=['low','normal','high','urgent'] as const;
