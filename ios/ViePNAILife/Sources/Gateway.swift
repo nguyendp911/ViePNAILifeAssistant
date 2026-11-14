@@ -486,6 +486,21 @@ import Foundation
             return false
         }
     }
+    // V4.7: all task edits go through validated, tenant-scoped Gateway APIs.
+    func createManagedTask(_ details: [String: Any]) async throws {
+        let _: TaskItem = try await call("/v1/tasks", method: "POST", body: details)
+        await refresh()
+    }
+    func updateManagedTask(_ id: String, details: [String: Any]) async throws {
+        guard UUID(uuidString: id) != nil else { throw APIError.text("ID công việc không hợp lệ.") }
+        let _: TaskItem = try await call("/v1/tasks/" + id, method: "PATCH", body: details)
+        await refresh()
+    }
+    func deleteManagedTask(_ id: String) async throws {
+        guard UUID(uuidString: id) != nil else { throw APIError.text("ID công việc không hợp lệ.") }
+        let _: DeleteResult = try await call("/v1/tasks/" + id, method: "DELETE")
+        await refresh()
+    }
     func createTask(title:String,dueAt:String?=nil) async {
         do {
             let _:TaskItem=try await call("/v1/tasks",method:"POST",body:["title":title,"dueAt":dueAt as Any? ?? NSNull()])
