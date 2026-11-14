@@ -1,11 +1,21 @@
 import Foundation
 struct ChatReply: Codable { let reply: String; let configured: Bool }
+struct TaskSubitem: Codable, Identifiable {
+    let id: String
+    let title: String
+    let done: Bool
+}
 struct TaskItem: Codable, Identifiable {
     let id: String
     let title: String
     let dueAt: String?
     let done: Bool
     let createdAt: String
+    let priority: String?
+    let labels: [String]?
+    let subtasks: [TaskSubitem]?
+    let recurrence: String?
+    let seriesId: String?
 }
 struct MemoryItem: Codable, Identifiable {
     let id: String
