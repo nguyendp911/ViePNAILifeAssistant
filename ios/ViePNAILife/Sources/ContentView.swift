@@ -78,7 +78,7 @@ struct ContentView: View {
             sync.reset()
             Task { await reminders.ensureAccount(token: api.token, baseURL: api.baseURL) }
         }
-        .onChange(of: api.tasks.map { $0.id + "|" + ($0.dueAt ?? "") + "|" + String($0.done) }) { _, _ in
+        .onChange(of: api.tasks.map { $0.id + "|" + $0.title + "|" + ($0.dueAt ?? "") + "|" + String($0.done) }) { _, _ in
             guard api.status == "Đã đồng bộ." || api.status.hasPrefix("Đã nhận bản dữ liệu") else { return }
             Task { await reminders.reschedule(tasks: api.tasks, token: api.token, baseURL: api.baseURL) }
         }
@@ -90,6 +90,7 @@ struct DashboardView: View {
     @Binding var selectedTab: LifeTab
     @State private var taskTitle = ""
     @State private var showingSmartDay = false
+    @State private var showingDetailedTask = false
     private var pendingCount: Int {
         api.actions.filter { $0.status == "awaiting_approval" }.count +
         api.workflows.filter { $0.status == "awaiting_approval" }.count +
@@ -286,6 +287,18 @@ struct DashboardView: View {
                                 .buttonStyle(.borderedProminent).tint(LifeTheme.accent)
                                 .disabled(taskTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             }
+                            HStack {
+                                Text("Thêm nhanh không đặt hạn")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                Spacer()
+                                Button {
+                                    showingDetailedTask = true
+                                } label: {
+                                    Label("Đặt hạn & chi tiết", systemImage: "calendar.badge.plus")
+                                        .font(.caption.weight(.medium))
+                                }
+                                .buttonStyle(.bordered)
+                            }
                             ForEach(api.tasks.prefix(6)) { item in
                                 HStack(spacing: 12) {
                                     Button { Task { await api.setTaskDone(item, done: !item.done) } } label: {
@@ -322,6 +335,12 @@ struct DashboardView: View {
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingSmartDay) {
             NavigationStack { DailyBriefingView(selectedTab: $selectedTab) }
+                .environmentObject(api)
+        }
+        .sheet(isPresented: $showingDetailedTask, onDismiss: {
+            taskTitle = ""
+        }) {
+            NavigationStack { TaskEditorView(suggestedTitle: taskTitle) }
                 .environmentObject(api)
         }
         .task {
