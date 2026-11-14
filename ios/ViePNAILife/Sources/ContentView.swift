@@ -251,6 +251,27 @@ struct DashboardView: View {
                         LifeShortcut(title: "Quy trình", subtitle: "Xem & phê duyệt", symbol: "flowchart", tint: .orange) { selectedTab = .actions }
                         LifeShortcut(title: "Bộ nhớ", subtitle: "Tra cứu thông tin", symbol: "brain.head.profile", tint: .mint) { selectedTab = .library }
                     }
+                    NavigationLink {
+                        TaskManagerView()
+                    } label: {
+                        LifePanel {
+                            HStack(spacing: 14) {
+                                Image(systemName: "list.bullet.rectangle.portrait.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(LifeTheme.accent)
+                                    .frame(width: 44, height: 44)
+                                    .background(LifeTheme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 13))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Task Manager 2.0").font(.headline)
+                                    Text("Hạn chót · Ưu tiên · Việc con · Lặp lại · Chỉnh sửa")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
                     LifeHeading(name: "Smart Planner", detail: "Việc quan trọng cần làm")
                     LifePanel {
                         VStack(alignment: .leading, spacing: 12) {
