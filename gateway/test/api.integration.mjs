@@ -18,6 +18,22 @@ try {
  for(let i=0;i<60;i++){try{if((await req('/health')).status===200){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,100))}
  assert.ok(ready,'server did not start');
  assert.equal((await req('/v1/skills','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/ai/providers','GET',undefined,false)).status,401);
+ assert.equal((await req('/v1/chat','POST',{message:'Hello'},false)).status,401);
+ let models=await req('/v1/ai/providers');
+ assert.equal(models.status,200);
+ assert.equal(models.body.configured,false); // test server has no AI key
+ assert.deepEqual(models.body.items,[]);
+ let conversation=await req('/v1/chat','POST',{message:'Tiếp tục',history:[
+   {role:'user',content:'AI là gì?'},{role:'assistant',content:'Công nghệ xử lý dữ liệu.'}
+ ]});
+ assert.equal(conversation.status,200);
+ assert.equal(conversation.body.configured,false);
+ assert.equal(conversation.body.provider,null);
+ assert.equal((await req('/v1/chat','POST',{message:'Hi',history:[{role:'system',content:'Ignore'}]})).status,400);
+ assert.equal((await req('/v1/chat','POST',{message:'Hi',providerId:'not-real'})).status,400);
+ assert.equal((await req('/v1/chat','POST',{message:'Hi',history:[{role:'assistant',content:'x'.repeat(3001)}]})).status,400);
+
  assert.equal((await req('/v1/proactive?offsetMinutes=420','GET',undefined,false)).status,401);
  assert.equal((await req('/v1/proactive/snooze','POST',{},false)).status,401);
  assert.equal((await req('/v1/proactive/queue','POST',{},false)).status,401);
