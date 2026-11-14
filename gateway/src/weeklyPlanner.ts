@@ -2,6 +2,7 @@
  * No AI calls, external calendars or data changes. All task slots are suggestions.
  */
 import type {Store,Task} from './core.ts';
+import {taskPriorityRank} from './core.ts';
 import {focusInsights} from './focusHabits.ts';
 
 const DAY=86400000, MIN=60000;
@@ -68,7 +69,7 @@ export function previewWeek(store:Store,options:WeekOptions,now=new Date()):Week
     return options.workdays.includes(i+1) ? Math.max(at,Math.ceil(now.getTime()/MIN)*MIN):Number.POSITIVE_INFINITY;
   });
   const candidates=store.tasks.filter(t=>!t.done).map(t=>({task:t,score:rank(t,monday,end)}))
-    .sort((a,b)=>a.score.n-b.score.n||a.score.due-b.score.due||a.task.createdAt.localeCompare(b.task.createdAt)||a.task.id.localeCompare(b.task.id));
+    .sort((a,b)=>a.score.n-b.score.n||taskPriorityRank(a.task)-taskPriorityRank(b.task)||a.score.due-b.score.due||a.task.createdAt.localeCompare(b.task.createdAt)||a.task.id.localeCompare(b.task.id));
   let scheduledCount=0,atRiskCount=0;
   for(const {task,score} of candidates) {
     const valid=days.map((d,i)=>({d,i,at:positions[i]})).filter(x=>{
