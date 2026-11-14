@@ -14,6 +14,7 @@ final class TaskReminderManager: ObservableObject {
     @Published private(set) var leadMinutes: Int
     @Published private(set) var showTaskTitle: Bool
     @Published private(set) var pendingCount = 0
+    @Published private(set) var legacyPendingCount = 0
     @Published private(set) var nextReminders: [PlannedReminder] = []
     @Published private(set) var permissionDescription = "Chưa kiểm tra quyền thông báo"
     @Published var message = ""
@@ -71,6 +72,24 @@ final class TaskReminderManager: ObservableObject {
         message = current.isEmpty
             ? "Đã tắt và xóa lịch nhắc trên thiết bị khi đăng xuất."
             : "Đã đổi tài khoản Gateway. Thông báo mặc định tắt cho tài khoản mới."
+    }
+
+    /// V4.7 migration: the retired LocalReminderView used random UUID identifiers.
+    /// Show them separately and delete ONLY if the user explicitly confirms.
+    func inspectLegacyReminders() async {
+        let all = await center.pendingNotificationRequests()
+        legacyPendingCount = all.filter { UUID(uuidString: $0.identifier) != nil }.count
+    }
+
+    func clearLegacyRemindersAfterConfirmation() async {
+        let queued = await center.pendingNotificationRequests()
+        let ids = queued.map(\.identifier).filter { UUID(uuidString: $0) != nil }
+        if !ids.isEmpty { center.removePendingNotificationRequests(withIdentifiers: ids) }
+        let shown = await center.deliveredNotifications()
+        let deliveredIDs = shown.map { $0.request.identifier }.filter { UUID(uuidString: $0) != nil }
+        if !deliveredIDs.isEmpty { center.removeDeliveredNotifications(withIdentifiers: deliveredIDs) }
+        await inspectLegacyReminders()
+        message = "Đã xóa \(ids.count) lịch nhắc của giao diện cũ sau khi bạn xác nhận."
     }
 
     func refreshPermissionStatus() async {
