@@ -1,3 +1,18 @@
+# ViePN AI Life V4.7 — Task Manager 2.0
+
+**Mã nguồn iOS + Gateway đã nâng cấp.** Kiểm tra build và trạng thái ký trong GitHub Actions.
+
+- **Home → Task Manager 2.0:** quản lý công việc có ngày/giờ, mức ưu tiên, tối đa 8 nhãn, tối đa 20 công việc con; chỉnh sửa/xóa và lọc công việc.
+- **Lặp lại hằng ngày/tuần/tháng:** tạo lần xuất hiện tiếp theo khi hoàn thành, không tạo trùng kể cả khi mở lại công việc đã hoàn thành.
+- **Smart Planner → Đặt hạn & chi tiết:** tạo việc có hạn ngay từ Home; vẫn giữ cách thêm nhanh không đặt hạn.
+- **Ưu tiên xuyên các hệ thống:** Smart Day, kế hoạch ngày/tuần và phân tích cá nhân tôn trọng mức ưu tiên mới bên trong từng nhóm hạn.
+- **Hợp nhất Smart Reminders:** Home, Profile, Settings cùng sử dụng một giao diện nhắc việc. Có lựa chọn xóa lịch UUID cũ sau khi người dùng xác nhận.
+- **API:** `POST /v1/tasks`, `PATCH /v1/tasks/:id`, `DELETE /v1/tasks/:id` và `GET /v1/tasks`; dữ liệu cũ vẫn tương thích.
+- Tài liệu: [V4.7 Task Manager 2.0](docs/V4.7-TASK-MANAGER.md).
+- Build iOS tạo **IPA chưa ký** và chưa thay đổi quyền App ID; Apple ID miễn phí còn phụ thuộc hạn mức 10 App ID/7 ngày và profile cho Share Extension.
+
+---
+
 # ViePN AI Life V4.6 — Smart Reminders
 
 **Mã nguồn SwiftUI đã cập nhật; CI macOS kiểm thử bộ lọc nhắc việc và build iOS IPA chưa ký.**
