@@ -21,7 +21,6 @@ import {enhanced,addProfile,searchMemory,suggestReply,SKILLS,addAutomation,queue
 const PORT=Number(process.env.PORT||8787);
 const ACCOUNTS=postgresEnabled?[]:parseAccountConfig(process.env.VIEPN_ACCOUNTS_JSON,process.env.VIEPN_GATEWAY_TOKEN);
 const FILE=resolve(process.env.VIEPN_DATA_FILE||'./data/state.json');
-const AI_URL=process.env.AI_API_URL||'',AI_KEY=process.env.AI_API_KEY||'',AI_MODEL=process.env.AI_MODEL||'';
 type AuthenticatedAccount={id:string;displayName:string};
 type TenantContext={account:AuthenticatedAccount;store:Store;file:string;persist:()=>Promise<void>};
 const tenantCache=new Map<string,TenantContext>();
@@ -151,7 +150,7 @@ const server=createServer(async(req,res)=>{
     }
     if(path==='/v1/ai/personal-ask'&&req.method==='POST') {
       const request=parseContextRequest(await body(req));
-      if(!AI_URL||!AI_KEY||!AI_MODEL)
+      if(!AI_PROVIDERS.length)
         return reply(res,503,{error:'AI provider is not configured; no private context sent'});
       const context=buildPersonalContext(store,request);
       const result=await aiChat(context.prompt);
@@ -189,7 +188,7 @@ const server=createServer(async(req,res)=>{
       }
       const plan=previewDailyPlan(store,options,busy,now);
       if(options.useAI) {
-        if(!AI_URL||!AI_KEY||!AI_MODEL)return reply(res,503,{error:'AI provider is not configured'});
+        if(!AI_PROVIDERS.length)return reply(res,503,{error:'AI provider is not configured'});
         // Only with the explicit useAI opt-in: a bounded plan text is sent to the
         // configured AI provider. Calendar event TITLES are never transmitted.
         const brief=plan.slots.map(slot=>slot.title+' | '+slot.startAt+' | '+slot.priority).join('\n');
@@ -228,7 +227,7 @@ const server=createServer(async(req,res)=>{
     if(req.method==='POST'&&path==='/v1/workflows/ai-preview'){
       const input=await body(req);
       if(typeof input.request!=='string'||!input.request.trim()||input.request.length>2500)throw new Error('invalid planning request');
-      if(!AI_URL||!AI_KEY||!AI_MODEL)return reply(res,503,{error:'AI provider is not configured'});
+      if(!AI_PROVIDERS.length)return reply(res,503,{error:'AI provider is not configured'});
       const instruction=`Bạn là hệ thống đề xuất KẾ HOẠCH XEM TRƯỚC, tuyệt đối không thực thi tác vụ. Trả CHỈ MỘT JSON object có keys title, note, task, dueAt. title: string ngắn; note: string hoặc null (nội dung ghi chú); task: string hoặc null (công việc); dueAt: null hoặc ISO UTC datetime. Chỉ được đề xuất tạo ghi chú và tạo công việc. KHÔNG gửi email, thanh toán, xóa dữ liệu, lưu bộ nhớ, điều khiển app bên ngoài. Nếu yêu cầu không phù hợp, trả về một ghi chú nêu rõ hạn chế. Phải có ít nhất note hoặc task. Yêu cầu người dùng: `+input.request;
       const suggestion=await aiChat(instruction);
       return reply(res,200,previewFromModel(suggestion.reply));
@@ -256,7 +255,7 @@ const server=createServer(async(req,res)=>{
       if(typeof p.question!=='string'||!p.question.trim()||p.question.length>2000)throw new Error('invalid question');
       const evidence=retrieve(kb,p.question,5);
       const extractive=evidenceAnswer(p.question,evidence);
-      if(p.useAI===true && evidence.length && AI_URL && AI_KEY && AI_MODEL){
+      if(p.useAI===true && evidence.length && AI_PROVIDERS.length>0){
         const model=await aiChat(buildGroundedPrompt(p.question,evidence));
         return reply(res,200,{answer:model.reply,citations:evidence,mode:'ai-grounded',configured:model.configured});
       }
