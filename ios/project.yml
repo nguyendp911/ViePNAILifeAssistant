@@ -4,8 +4,8 @@ options:
     iOS: '17.0'
 settings:
   SWIFT_VERSION: '5.9'
-  MARKETING_VERSION: '4.6.0'
-  CURRENT_PROJECT_VERSION: '46'
+  MARKETING_VERSION: '4.7.0'
+  CURRENT_PROJECT_VERSION: '47'
   GENERATE_INFOPLIST_FILE: YES
   INFOPLIST_KEY_CFBundleDisplayName: ViePN AI Life
   INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: 'Cho phép nhận dạng giọng nói khi bạn chủ động sử dụng micro.'
