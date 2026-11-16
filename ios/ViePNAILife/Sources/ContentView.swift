@@ -401,7 +401,7 @@ struct ChatView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 7) {
                     if providers.isEmpty {
-                        Label("Dùng model đã cấu hình tại Gateway", systemImage: "server.rack")
+                        Label("Chưa có AI: vào Profile › Khóa AI & Google để nhập khóa", systemImage: "key")
                             .font(.caption).foregroundStyle(.secondary)
                     } else {
                         HStack(spacing: 8) {
@@ -600,6 +600,9 @@ struct ChatView: View {
         .onChange(of: api.baseURL) { _, _ in
             speech.stop()
             lines = ChatHistory.load(token: api.token, baseURL: api.baseURL)
+            Task { await loadProviders() }
+        }
+        .onChange(of: api.localAIRevision) { _, _ in
             Task { await loadProviders() }
         }
         .onChange(of: providerId) { _, selected in
@@ -848,6 +851,7 @@ struct SettingsView:View {
                 ForEach(api.memories){m in HStack{Text(m.text);Spacer();Button(role:.destructive){Task{await api.deleteMemory(m.id)}} label:{Image(systemName:"trash")}}}
             }
             Section("Tiện ích mở rộng") {
+                NavigationLink("Khóa AI & Google (trên máy)") {LocalAISettingsView()}
                 NavigationLink("Cá nhân hóa và bộ nhớ") {PersonalIntelligenceView()}
                 NavigationLink("Skills & Automation") {SkillsAutomationView()}
                 NavigationLink("Smart Reminders – iPhone") {TaskRemindersView()}

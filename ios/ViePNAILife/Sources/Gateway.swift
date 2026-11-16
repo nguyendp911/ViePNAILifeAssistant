@@ -3,6 +3,8 @@ import Foundation
     @Published var baseURL = UserDefaults.standard.string(forKey:"viepn.base_url") ?? ""
     @Published var token = SecureToken.load()
     @Published var status = ""
+    /// Bumped when keys in LocalAISettingsView change so the chat screen reloads its model list.
+    @Published var localAIRevision = 0
     @Published var accountName = ""
     @Published var tasks:[TaskItem] = []
     @Published var memories:[MemoryItem] = []
@@ -355,8 +357,13 @@ import Foundation
             dailyBriefingStatus = error.localizedDescription
         }
     }
+    /// Standalone mode: no Gateway login, but the user entered Gemini/OpenAI keys on this iPhone.
+    private var useLocalAI: Bool {
+        (baseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || token.isEmpty) && LocalAI.hasKeys
+    }
     func availableAIProviders() async throws -> ChatProvidersResponse {
-        try await call("/v1/ai/providers")
+        if useLocalAI { return LocalAI.providers() }
+        return try await call("/v1/ai/providers")
     }
     func chat(
         _ message: String,
@@ -364,6 +371,9 @@ import Foundation
         providerId: String? = nil,
         model: String? = nil
     ) async throws -> ChatReply {
+        if useLocalAI {
+            return try await LocalAI.chat(message, history: history, providerId: providerId, model: model)
+        }
         // Do not forward private memories, tasks or documents implicitly.
         // The latest 12 local chat turns are sent only to answer this specific message.
         let safeHistory = history.suffix(12).map { line -> [String: String] in

@@ -148,6 +148,9 @@ struct ProfileHubView: View {
                     NavigationLink { SkillsAutomationView() } label: {
                         LifeShortcutRow(title: "Skills & Automation", detail: "Quản lý lịch tự động và kỹ năng", icon: "square.grid.2x2")
                     }.buttonStyle(.plain)
+                    NavigationLink { LocalAISettingsView() } label: {
+                        LifeShortcutRow(title: "Khóa AI & Google", detail: "Nhập Gemini, OpenAI và kết nối Google ngay trên iPhone", icon: "key.fill")
+                    }.buttonStyle(.plain)
                     NavigationLink { GoogleConnectionsView() } label: {
                         LifeShortcutRow(title: "Connected Services", detail: "Gmail & Google Calendar với quyền chỉ đọc", icon: "link.circle")
                     }.buttonStyle(.plain)
@@ -158,7 +161,7 @@ struct ProfileHubView: View {
                         VStack(alignment: .leading, spacing: 9) {
                             Label("Bảo vệ dữ liệu", systemImage: "checkmark.shield.fill")
                                 .font(.headline).foregroundStyle(LifeTheme.accent)
-                            Text("API key của nhà cung cấp AI nằm trên máy chủ. Gateway token được lưu bằng iOS Keychain. Không tự động thực hiện hành động nhạy cảm.")
+                            Text("API key AI nằm trên máy chủ Gateway hoặc trong iOS Keychain của iPhone (không có trong IPA). Gateway token cũng lưu bằng Keychain. Không tự động thực hiện hành động nhạy cảm.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                             Button("Khóa ứng dụng") { privacy.unlocked = false }
                                 .buttonStyle(.bordered).tint(LifeTheme.accent)
