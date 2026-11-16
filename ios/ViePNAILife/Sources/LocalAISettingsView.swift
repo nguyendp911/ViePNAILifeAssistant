@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 /// Enter Gemini / OpenAI keys and a Google OAuth client ID directly on the iPhone.
 /// Everything is stored in the device Keychain; nothing is bundled in the IPA or sent to a Gateway.
