@@ -26,6 +26,22 @@ jobs:
       - name: Build for iPhone
         run: |
           xcodebuild -project ios/ViePNAILife.xcodeproj -scheme ViePNAILife -sdk iphoneos -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Verify embedded app extension
+        run: |
+          APP=build/Build/Products/Release-iphoneos/ViePNAILife.app
+          APPEX="$APP/PlugIns/ViePNShareExtension.appex"
+          test -d "$APPEX" || { echo "Share extension is not embedded"; exit 1; }
+          PB=/usr/libexec/PlistBuddy
+          APP_ID=$($PB -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
+          EXT_ID=$($PB -c 'Print :CFBundleIdentifier' "$APPEX/Info.plist")
+          case "$EXT_ID" in "$APP_ID".*) ;; *) echo "Extension id $EXT_ID must be prefixed by $APP_ID"; exit 1;; esac
+          for key in CFBundleExecutable CFBundleVersion CFBundleShortVersionString CFBundlePackageType NSExtension:NSExtensionPointIdentifier NSExtension:NSExtensionPrincipalClass; do
+            $PB -c "Print :$key" "$APPEX/Info.plist" >/dev/null || { echo "Missing $key in extension Info.plist"; exit 1; }
+          done
+          for key in CFBundleVersion CFBundleShortVersionString; do
+            [ "$($PB -c "Print :$key" "$APP/Info.plist")" = "$($PB -c "Print :$key" "$APPEX/Info.plist")" ] || { echo "$key differs between app and extension"; exit 1; }
+          done
+          plutil -p "$APPEX/Info.plist"
       - name: Package unsigned IPA
         run: |
           mkdir -p Payload

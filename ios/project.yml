@@ -32,9 +32,25 @@ targets:
     platform: iOS
     sources:
       - path: ViePNShareExtension/ShareViewController.swift
+    # XcodeGen regenerates this Info.plist from `properties` (plus its defaults), so every key the
+    # extension needs - notably NSExtension - must be declared here, not only in the checked-in file.
+    # Without NSExtension / version keys installd fails with
+    # "Failed to create app extension placeholder for .../PlugIns/ViePNShareExtension.appex".
     info:
       path: ViePNShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: ViePN AI Life
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
     settings:
+      GENERATE_INFOPLIST_FILE: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.viepn.ailife.share
       CODE_SIGN_ENTITLEMENTS: ViePNShareExtension/ViePNShareExtension.entitlements
       CODE_SIGNING_ALLOWED: NO
