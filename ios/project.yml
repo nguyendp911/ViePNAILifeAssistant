@@ -11,6 +11,11 @@ settings:
   INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: 'Cho phép nhận dạng giọng nói khi bạn chủ động sử dụng micro.'
   INFOPLIST_KEY_NSMicrophoneUsageDescription: 'Cho phép ghi âm khi bạn nhấn nút nhập giọng nói.'
   INFOPLIST_KEY_NSFaceIDUsageDescription: 'Mở khóa dữ liệu trợ lý cá nhân.'
+  # Without a launch screen iOS runs the app letterboxed (black bars top/bottom, content squeezed into the middle).
+  INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+  INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+  INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
   TARGETED_DEVICE_FAMILY: '1'
 targets:
   ViePNAILife:

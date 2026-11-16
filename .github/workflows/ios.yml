@@ -32,6 +32,7 @@ jobs:
           APPEX="$APP/PlugIns/ViePNShareExtension.appex"
           test -d "$APPEX" || { echo "Share extension is not embedded"; exit 1; }
           PB=/usr/libexec/PlistBuddy
+          $PB -c 'Print :UILaunchScreen' "$APP/Info.plist" >/dev/null || { echo "App Info.plist has no UILaunchScreen (app would be letterboxed)"; exit 1; }
           APP_ID=$($PB -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
           EXT_ID=$($PB -c 'Print :CFBundleIdentifier' "$APPEX/Info.plist")
           case "$EXT_ID" in "$APP_ID".*) ;; *) echo "Extension id $EXT_ID must be prefixed by $APP_ID"; exit 1;; esac
